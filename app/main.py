@@ -15,10 +15,12 @@ from app.config import BASE_DIR, UPLOAD_DIR, GEMINI_API_KEY
 from app.database import (
     init_db, reset_db, get_stats, get_senders, get_sender_by_id,
     get_sender_by_email, get_sender_messages, get_domains,
-    update_sender_triage, get_indexing_status, set_indexing_status
+    update_sender_triage, get_indexing_status, set_indexing_status,
+    get_sender_ai_categories, get_sender_ai_stats, get_connection
 )
 from app.parser import parse_mbox_stream
 from app.mcp_bridge import verify_sender_with_gemini, MCP_TOOLS, execute_mcp_tool
+from app.local_ai import get_analysis_status, start_sender_analysis_thread
 
 init_db()
 
@@ -141,8 +143,11 @@ async def upload_mbox_endpoint(
     safe_filename = Path(file.filename).name
     target_path = str(UPLOAD_DIR / safe_filename)
 
-    with open(target_path, "wb") as f_out:
-        shutil.copyfileobj(file.file, f_out, length=1024 * 1024)
+    try:
+        with open(target_path, "wb") as f_out:
+            shutil.copyfileobj(file.file, f_out, length=1024 * 1024)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(exc)}")
 
     file_size_bytes = os.path.getsize(target_path)
 
@@ -261,3 +266,151 @@ def mcp_rpc_endpoint(req: McpRpcRequest):
                 "message": f"Method {method} not found on MCP Server"
             }
         }
+
+@app.get("/api/viz-stats")
+def get_viz_stats():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM messages;")
+    total_messages = cursor.fetchone()[0] or 1
+    cursor.execute("SELECT COUNT(*) FROM senders;")
+    total_senders = cursor.fetchone()[0] or 1
+
+    cursor.execute("""
+        SELECT classification, COUNT(*) as sender_cnt, COALESCE(SUM(message_count), 0) as msg_cnt
+        FROM senders
+        GROUP BY classification;
+    """)
+    rows = cursor.fetchall()
+
+    class_data = {}
+    for r in rows:
+        c_name = r["classification"]
+        s_cnt = r["sender_cnt"]
+        m_cnt = r["msg_cnt"]
+        class_data[c_name] = {
+            "sender_count": s_cnt,
+            "message_count": m_cnt,
+            "message_percent": round((m_cnt / total_messages) * 100, 1),
+            "sender_percent": round((s_cnt / total_senders) * 100, 1)
+        }
+
+    newsletters = class_data.get("newsletters", {"sender_count": 0, "message_count": 0, "message_percent": 0.0})
+    mixed = class_data.get("mixed", {"sender_count": 0, "message_count": 0, "message_percent": 0.0})
+    orgs = class_data.get("organizations", {"sender_count": 0, "message_count": 0, "message_percent": 0.0})
+    people = class_data.get("people", {"sender_count": 0, "message_count": 0, "message_percent": 0.0})
+
+    cursor.execute("""
+        SELECT COUNT(DISTINCT s.email) FROM senders s
+        WHERE s.classification = 'people' AND s.email IN (
+            SELECT DISTINCT sender_email FROM messages WHERE is_transactional = 1
+        );
+    """)
+    people_trans = cursor.fetchone()[0] or 0
+
+    conn.close()
+
+    return {
+        "total_messages": total_messages,
+        "total_senders": total_senders,
+        "categories": {
+            "newsletters": newsletters,
+            "mixed": mixed,
+            "organizations": orgs,
+            "people": people
+        },
+        "venn": {
+            "spam_senders": newsletters["sender_count"],
+            "spam_messages": newsletters["message_count"],
+            "receipt_senders": orgs["sender_count"],
+            "receipt_messages": orgs["message_count"],
+            "personal_senders": people["sender_count"],
+            "personal_messages": people["message_count"],
+            "mixed_senders": mixed["sender_count"],
+            "mixed_messages": mixed["message_count"],
+            "personal_receipt_senders": people_trans
+        }
+    }
+
+class AiCleanAnalyzeRequest(BaseModel):
+    email: str
+
+class AiCleanFilterRequest(BaseModel):
+    email: str
+    category_name: str
+    gmail_query: str
+
+@app.get("/api/ai-clean/senders")
+def list_ai_clean_senders(search: Optional[str] = Query(None)):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = """
+        SELECT s.id, s.email, s.name, s.classification, s.message_count, s.last_seen,
+               (SELECT COUNT(*) FROM messages m WHERE m.sender_email = s.email AND m.summary IS NOT NULL AND m.summary != '') as summarized_count,
+               (SELECT COUNT(*) FROM sender_ai_categories sac WHERE sac.sender_email = s.email) as categories_count
+        FROM senders s
+    """
+    params = []
+    if search:
+        query += " WHERE s.email LIKE ? OR s.name LIKE ?"
+        params.extend([f"%{search}%", f"%{search}%"])
+    query += " ORDER BY s.message_count DESC LIMIT 100;"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    return {"senders": [dict(r) for r in rows]}
+
+@app.post("/api/ai-clean/analyze")
+def start_ai_clean_analysis(req: AiCleanAnalyzeRequest):
+    email = req.email.strip().lower()
+    try:
+        import torch
+        import transformers
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Local AI packages (PyTorch and Transformers) are currently downloading and installing in the background. Please wait a few minutes for setup to finish before scanning."
+        )
+    started = start_sender_analysis_thread(email)
+    if not started:
+        cur = get_analysis_status()
+        if cur.get("sender") == email and cur.get("status") == "running":
+            return {"status": "already_running", "message": "Analysis is already in progress for this sender"}
+        raise HTTPException(status_code=409, detail="Another sender analysis is currently running")
+    return {"status": "started", "email": email}
+
+@app.get("/api/ai-clean/status")
+def get_ai_clean_status():
+    return get_analysis_status()
+
+@app.get("/api/ai-clean/categories")
+def get_ai_clean_categories(email: str = Query(...)):
+    cats = get_sender_ai_categories(email)
+    stats = get_sender_ai_stats(email)
+    return {"categories": cats, "stats": stats}
+
+@app.post("/api/ai-clean/category-filter")
+def generate_ai_clean_category_filter(req: AiCleanFilterRequest):
+    safe_query = req.gmail_query.strip()
+    safe_cat = req.category_name.strip()
+    entry = (
+        f"  <entry>\n"
+        f"    <category term='filter'></category>\n"
+        f"    <title>CleanMail - {safe_cat}</title>\n"
+        f"    <apps:property name='hasTheWord' value='{safe_query}'/>\n"
+        f"    <apps:property name='shouldArchive' value='true'/>\n"
+        f"    <apps:property name='label' value='CleanMail {safe_cat}'/>\n"
+        f"  </entry>"
+    )
+    xml_content = (
+        f"<?xml version='1.0' encoding='UTF-8'?>\n"
+        f"<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>\n"
+        f"  <title>CleanMail Filter - {safe_cat}</title>\n"
+        f"{entry}\n"
+        f"</feed>"
+    )
+    return {
+        "gmail_query": safe_query,
+        "xml_content": xml_content
+    }
+

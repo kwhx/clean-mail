@@ -100,11 +100,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  gap: 12px;
 }
 
 .retro-main-window {
   width: 100%;
   max-width: 1320px;
+  min-width: 0;
+  flex: 1 1 auto;
   height: calc(100vh - 54px);
   background: var(--base-light);
   border: 2px solid var(--border-dark);
@@ -485,35 +488,44 @@ body {
   max-width: 240px;
 }
 
-/* Classification Badges */
+.retro-table input[type="checkbox"] {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  opacity: 1 !important;
+  position: static !important;
+  cursor: pointer !important;
+  width: 13px !important;
+  height: 13px !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+}
+
 .badge-pill {
   display: inline-block;
-  padding: 1px 6px;
-  border: 1px solid var(--border-dark);
-  font-size: 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 11px;
   font-weight: bold;
-  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .badge-people {
-  background: #d4edda;
-  color: #155724;
+  color: #1b6e34;
 }
 
 .badge-organizations {
-  background: #d1ecf1;
-  color: #0c5460;
+  color: #0d6077;
 }
 
 .badge-newsletters {
-  background: #fff3cd;
-  color: #856404;
+  color: #9c6500;
 }
 
 .badge-mixed {
-  background: var(--highlight-bg);
-  color: var(--crimson-accent);
-  border-color: var(--crimson-accent);
+  color: #a01015;
 }
 
 /* Bottom Window Footer Bar */
@@ -645,24 +657,24 @@ body {
 }
 
 .risk-pill {
-  padding: 2px 6px;
-  border: 1px solid var(--border-dark);
+  display: inline-block;
+  background: transparent;
+  border: none;
+  padding: 0;
   font-size: 11px;
+  font-weight: bold;
 }
 
 .risk-low {
-  background: #d4edda;
-  color: #155724;
+  color: #1b6e34;
 }
 
 .risk-med {
-  background: #fff3cd;
-  color: #856404;
+  color: #9c6500;
 }
 
 .risk-high {
-  background: #f8d7da;
-  color: #721c24;
+  color: #a01015;
 }
 
 /* Monospace Preview Box */
@@ -695,5 +707,699 @@ body {
   }
   .desktop-viewport {
     padding: 0;
+  }
+}
+
+/* =============================================
+   RETRO 2000s BLINKING AD SIDEBARS
+   ============================================= */
+
+/* Ad Sidebar Containers */
+.retro-ad-sidebar {
+  flex: 0 0 210px;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: flex-start;
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 54px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.retro-ad-sidebar::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Hide ads on smaller screens */
+@media (max-width: 1560px) {
+  .retro-ad-sidebar {
+    display: none;
+  }
+}
+
+/* Individual Ad Cards */
+.retro-ad {
+  user-select: none;
+}
+
+/* Outer Border - Beveled 2000s ad frame */
+.retro-ad__border {
+  border: 3px solid var(--border-dark);
+  background: linear-gradient(135deg, #ffe8a1 0%, #ffd54f 30%, #ffb300 70%, #ff8f00 100%);
+  box-shadow: 3px 3px 0 var(--deep-shadow),
+              inset 1px 1px 0 rgba(255,255,255,0.5),
+              inset -1px -1px 0 rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.retro-ad__border--alt {
+  background: linear-gradient(135deg, #c8e6ff 0%, #90caf9 30%, #42a5f5 70%, #1e88e5 100%);
+}
+
+/* Header / Footer Strips */
+.retro-ad__header-strip {
+  background: var(--crimson-accent);
+  color: #ffd54f;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 5px 6px;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border-dark);
+  white-space: nowrap;
+}
+
+.retro-ad__header-strip--alt {
+  background: #0d47a1;
+  color: #bbdefb;
+}
+
+.retro-ad__footer-strip {
+  background: var(--crimson-accent);
+  color: #ffd54f;
+  text-align: center;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 4px;
+  text-transform: uppercase;
+  border-top: 2px solid var(--border-dark);
+}
+
+.retro-ad__footer-strip--alt {
+  background: #0d47a1;
+  color: #bbdefb;
+}
+
+/* Ad Body */
+.retro-ad__body {
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+/* Avatar Ring */
+.retro-ad__avatar-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid var(--crimson-accent);
+  background: var(--pure-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 var(--deep-shadow),
+              inset 0 0 0 2px #ffd54f;
+  overflow: hidden;
+}
+
+.retro-ad__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.retro-ad__avatar-text {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--crimson-accent);
+  line-height: 1;
+}
+
+/* Name */
+.retro-ad__name {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--crimson-accent);
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+}
+
+/* Tagline */
+.retro-ad__tagline {
+  font-size: 10px;
+  font-weight: bold;
+  color: #3e2723;
+  line-height: 1.4;
+}
+
+.retro-ad__tagline em {
+  display: inline-block;
+  white-space: nowrap;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.retro-ad__fine-print {
+  font-size: 8px;
+  color: #795548;
+  font-style: italic;
+}
+
+/* Divider */
+.retro-ad__divider {
+  width: 80%;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--border-dark) 0,
+    var(--border-dark) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  margin: 4px 0;
+}
+
+/* Skills */
+.retro-ad__skills-title {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--crimson-accent);
+  letter-spacing: 0.5px;
+}
+
+.retro-ad__skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.retro-ad__tag {
+  font-size: 8px;
+  font-weight: bold;
+  background: var(--pure-white);
+  color: var(--crimson-accent);
+  border: 1px solid var(--crimson-accent);
+  padding: 1px 5px;
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+}
+
+/* Link Buttons */
+.retro-ad__link-btn {
+  display: block;
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--pure-white);
+  border: 2px solid var(--border-dark);
+  color: var(--crimson-accent);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  transition: transform 0.1s ease;
+}
+
+.retro-ad__link-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--deep-shadow);
+  background: var(--highlight-bg);
+}
+
+.retro-ad__link-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.retro-ad__link-btn--alt {
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-color: #0d47a1;
+}
+
+.retro-ad__link-btn--alt:hover {
+  background: #bbdefb;
+}
+
+.retro-ad__link-btn--star {
+  background: #fff9c4;
+  color: #f57f17;
+  border-color: #f57f17;
+}
+
+.retro-ad__link-btn--star:hover {
+  background: #fff176;
+}
+
+/* Right banner specific */
+.retro-ad__badge-stamp {
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+  background: #0d47a1;
+  padding: 3px 8px;
+  border: 1px dashed #ffd54f;
+  letter-spacing: 1px;
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  margin-bottom: 2px;
+}
+
+.retro-ad__console-stamp {
+  font-size: 10px;
+  font-weight: 900;
+  font-family: var(--font-mono, monospace);
+  color: #22c55e;
+  background: #111;
+  padding: 3px 8px;
+  border: 1px solid #22c55e;
+  letter-spacing: 0.5px;
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  margin-bottom: 2px;
+}
+
+.retro-ad__catchphrase {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0d47a1;
+  line-height: 1.3;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+}
+
+.retro-ad__catchphrase em {
+  color: var(--crimson-accent);
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+}
+
+.retro-ad__sub-catchphrase {
+  font-size: 10px;
+  font-weight: bold;
+  color: #1565c0;
+  line-height: 1.3;
+}
+
+.retro-ad__counter-label {
+  font-size: 8px;
+  font-weight: bold;
+  color: #1565c0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.retro-ad__counter {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0d47a1;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.retro-ad__counter--small {
+  font-size: 24px;
+}
+
+.retro-ad__cta-text {
+  font-size: 9px;
+  font-weight: bold;
+  color: #1565c0;
+}
+
+/* Green banner specific (Ad 2 Right) */
+.retro-ad__border--green {
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 30%, #4ade80 70%, #22c55e 100%);
+}
+
+.retro-ad__header-strip--green {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.retro-ad__footer-strip--green {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.retro-ad__blink-text--green {
+  color: #fef08a;
+}
+
+.retro-ad__stat-line {
+  font-size: 9px;
+  font-weight: 800;
+  color: #14532d;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.55);
+  padding: 2px 6px;
+  border: 1px solid rgba(20, 83, 45, 0.25);
+  width: 90%;
+  box-sizing: border-box;
+}
+
+.retro-ad__visitor-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 3px 0;
+}
+
+.retro-ad__visitor-digits {
+  display: flex;
+  gap: 2px;
+  background: #111;
+  padding: 3px 5px;
+  border: 1px solid #444;
+  box-shadow: inset 0 0 4px #000;
+}
+
+.retro-ad__digit {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 900;
+  color: #22c55e;
+  background: #1f2937;
+  padding: 1px 4px;
+  border: 1px solid #374151;
+  text-shadow: 0 0 5px rgba(34, 197, 94, 0.8);
+}
+
+.retro-ad__marquee-text {
+  font-size: 8px;
+  font-weight: bold;
+  color: #166534;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.retro-ad__link-btn--green {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #15803d;
+}
+
+.retro-ad__link-btn--green:hover {
+  background: #dcfce7;
+}
+
+/* =============================================
+   STARBURST / STAR CUTOUT - Pulsing Badge
+   ============================================= */
+
+.retro-ad--star-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.retro-starburst {
+  width: 130px;
+  height: 130px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(3px 3px 0 var(--deep-shadow));
+}
+
+/* 12-point starburst using clip-path, tilted 45 degrees */
+.retro-starburst::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ff1744 0%, #d50000 50%, #b71c1c 100%);
+  clip-path: polygon(
+    50% 0%,
+    61% 15%,
+    78% 5%,
+    75% 24%,
+    95% 25%,
+    83% 39%,
+    100% 50%,
+    83% 61%,
+    95% 75%,
+    75% 76%,
+    78% 95%,
+    61% 85%,
+    50% 100%,
+    39% 85%,
+    22% 95%,
+    25% 76%,
+    5% 75%,
+    17% 61%,
+    0% 50%,
+    17% 39%,
+    5% 25%,
+    25% 24%,
+    22% 5%,
+    39% 15%
+  );
+  transform: rotate(-45deg);
+  transform-origin: center center;
+}
+
+.retro-starburst__photo {
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
+  clip-path: polygon(
+    50% 0%,
+    61% 15%,
+    78% 5%,
+    75% 24%,
+    95% 25%,
+    83% 39%,
+    100% 50%,
+    83% 61%,
+    95% 75%,
+    75% 76%,
+    78% 95%,
+    61% 85%,
+    50% 100%,
+    39% 85%,
+    22% 95%,
+    25% 76%,
+    5% 75%,
+    17% 61%,
+    0% 50%,
+    17% 39%,
+    5% 25%,
+    25% 24%,
+    22% 5%,
+    39% 15%
+  );
+  position: relative;
+  z-index: 2;
+  display: block;
+}
+
+/* Star Shape Pulse Animation - tilted -45 degrees, scaling in rhythm */
+.retro-starburst--pulse::before {
+  animation: starPulseSync 1.8s ease-in-out infinite;
+}
+
+@keyframes starPulseSync {
+  0%, 100% {
+    transform: rotate(-45deg) scale(1);
+  }
+  50% {
+    transform: rotate(-45deg) scale(1.12);
+  }
+}
+
+.retro-starburst-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+}
+
+.retro-starburst-link:hover .retro-starburst::before {
+  filter: brightness(1.1);
+}
+
+/* Text content inside the star tilted -45deg with the star, without pulsating */
+.retro-starburst__inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  user-select: none;
+  animation: none;
+  transform: rotate(-45deg);
+  transform-origin: center center;
+}
+
+.retro-starburst__call-sub {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff9c4;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 #b71c1c, 2px 2px 0 rgba(0, 0, 0, 0.6);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.retro-starburst__call-main {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffd54f;
+  letter-spacing: 0.8px;
+  text-shadow: 1px 1px 0 #b71c1c, 2px 2px 0 rgba(0, 0, 0, 0.6);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+/* Mini CTA under starburst */
+.retro-ad__mini-cta {
+  background: var(--crimson-accent);
+  border: 2px solid var(--border-dark);
+  padding: 5px 8px;
+  text-align: center;
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  width: 100%;
+}
+
+.retro-ad__mini-cta--borderless {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 4px 0 0 0;
+}
+
+/* Rhythm of the star + the text line below it matches in 1.8s lockstep */
+.retro-ad__mini-cta--borderless .retro-ad__blink-text {
+  color: #ffd54f;
+  font-size: 10px;
+  font-weight: 900;
+  text-shadow: 1px 1px 0 #000, 0 0 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+  display: inline-block;
+  animation: textPulseSync 1.8s ease-in-out infinite;
+}
+
+.retro-ad__blink-text {
+  font-size: 9px;
+  font-weight: 900;
+  color: #ffd54f;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  animation: textPulseSync 1.8s ease-in-out infinite;
+}
+
+@keyframes textPulseSync {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.85;
+  }
+}
+
+/* =============================================
+   RETRO CAT MEME CARD
+   ============================================= */
+
+.retro-ad--cat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.retro-cat-frame {
+  background: var(--base-light);
+  border: 3px solid var(--border-dark);
+  box-shadow: 3px 3px 0 var(--deep-shadow),
+              inset 1px 1px 0 rgba(255, 255, 255, 0.6),
+              inset -1px -1px 0 rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.retro-cat-frame:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--deep-shadow);
+}
+
+.retro-cat-gif {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border-dark);
+  image-rendering: auto;
+}
+
+/* =============================================
+   TRANSPARENT RETRO STICKERS
+   ============================================= */
+
+.retro-ad--sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: transform 0.15s ease;
+}
+
+.retro-ad--sticker:hover {
+  transform: scale(1.04);
+}
+
+.retro-sticker-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  user-select: none;
+}
+
+.retro-ad--sticker-gif1 {
+  overflow: visible;
+}
+
+.retro-sticker-img--gif1 {
+  width: 160%;
+  max-width: 160%;
+  margin-left: -30%;
+  margin-right: -30%;
+  margin-top: -5px;
+}
+
+/* =============================================
+   AD RESPONSIVE OVERRIDES
+   ============================================= */
+
+/* Show ads only on wide screens */
+@media (min-width: 1561px) and (max-width: 1760px) {
+  .retro-ad-sidebar {
+    flex: 0 0 205px;
+    width: 205px;
+  }
+  .retro-starburst {
+    width: 125px;
+    height: 125px;
   }
 }

@@ -24,15 +24,32 @@ const app = {
         this.showUploadView();
       }
     });
-    this.startStatusPolling();
+    this.checkInitialIndexingStatus();
+  },
+
+  async checkInitialIndexingStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (res.ok) {
+        const status = await res.json();
+        if (status.status === 'parsing' || status.status === 'indexing') {
+          this._userInitiatedUpload = true;
+          this.startStatusPolling();
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
   },
 
   showUploadView() {
     const uploadView = document.getElementById('uploadView');
     const mainView = document.getElementById('mainView');
+    const cleanView = document.getElementById('cleanView');
     const cancelBtn = document.getElementById('cancelUploadBtn');
     if (uploadView) uploadView.style.display = 'flex';
     if (mainView) mainView.style.display = 'none';
+    if (cleanView) cleanView.style.display = 'none';
     if (cancelBtn) {
       cancelBtn.style.display = this.totalMessages > 0 ? 'inline-block' : 'none';
     }
@@ -41,10 +58,55 @@ const app = {
   showMainView() {
     const uploadView = document.getElementById('uploadView');
     const mainView = document.getElementById('mainView');
+    const cleanView = document.getElementById('cleanView');
     if (uploadView) uploadView.style.display = 'none';
     if (mainView) mainView.style.display = 'flex';
+    if (cleanView) cleanView.style.display = 'none';
+    const vizCont = document.getElementById('allSendersVizContainer');
+    if (vizCont) {
+      vizCont.style.display = this.currentFilter === 'all' ? 'grid' : 'none';
+    }
     this.loadSenders();
     this.loadStats();
+  },
+
+  showCleanView(mode = 'ai') {
+    const uploadView = document.getElementById('uploadView');
+    const mainView = document.getElementById('mainView');
+    const cleanView = document.getElementById('cleanView');
+    if (uploadView) uploadView.style.display = 'none';
+    if (mainView) mainView.style.display = 'none';
+    if (cleanView) cleanView.style.display = 'flex';
+    this.switchCleanMode(mode);
+  },
+
+  switchCleanMode(mode) {
+    this.currentCleanMode = mode;
+    const aiBtn = document.getElementById('cleanModeAiBtn');
+    const filterBtn = document.getElementById('cleanModeFilterBtn');
+    const aiContainer = document.getElementById('cleanAiModeContainer');
+    const filterContainer = document.getElementById('cleanFilterModeContainer');
+    const subtitle = document.getElementById('cleanModeSubtitle');
+
+    if (mode === 'filter') {
+      if (aiBtn) aiBtn.classList.remove('active');
+      if (filterBtn) filterBtn.classList.add('active');
+      if (aiContainer) aiContainer.style.display = 'none';
+      if (filterContainer) filterContainer.style.display = 'flex';
+      if (subtitle) subtitle.textContent = 'Rule-based multi-sender filtering, copy search query, and export filter files.';
+      this.updatePoolButton();
+      this.renderCleanFilterSelectedTable();
+      this.generateFilterRules();
+    } else {
+      if (aiBtn) aiBtn.classList.add('active');
+      if (filterBtn) filterBtn.classList.remove('active');
+      if (aiContainer) aiContainer.style.display = 'flex';
+      if (filterContainer) filterContainer.style.display = 'none';
+      if (subtitle) subtitle.textContent = 'Local AI scans and categorizes emails per sender to build precision rules.';
+      this.updatePoolButton();
+      this.showAiCleanSenderList();
+      this.loadAiCleanSenders();
+    }
   },
 
   setFilter(filterType) {
@@ -59,6 +121,11 @@ const app = {
         btn.classList.remove('active');
       }
     });
+
+    const vizCont = document.getElementById('allSendersVizContainer');
+    if (vizCont) {
+      vizCont.style.display = filterType === 'all' ? 'grid' : 'none';
+    }
 
     this.loadSenders();
   },
@@ -97,6 +164,7 @@ const app = {
       if (elSenders) elSenders.textContent = data.total_senders.toLocaleString();
       if (elJunk) elJunk.textContent = data.junk_candidates.toLocaleString();
       if (elDomains) elDomains.textContent = data.total_domains.toLocaleString();
+      this.loadVizStats();
     } catch (err) {
       console.error(err);
     }
@@ -111,8 +179,11 @@ const app = {
       if (!res.ok) throw new Error('Could not get senders');
       const data = await res.json();
       this.totalSenders = data.total;
+      if (!this.sendersCache) this.sendersCache = new Map();
+      (data.items || []).forEach(s => this.sendersCache.set(s.email, s));
       this.renderSendersTable(data.items);
       this.updatePagination();
+      this.updatePoolButton();
     } catch (err) {
       console.error(err);
       this.showAlert('Error', 'Unable to load email senders');
@@ -124,12 +195,13 @@ const app = {
     if (!tbody) return;
 
     if (!senders || senders.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #777;">No email senders found</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #777;">No email senders found</td></tr>`;
       return;
     }
 
     let html = '';
-    senders.forEach(s => {
+    senders.forEach((s, idx) => {
+      const rowNum = (this.currentPage - 1) * this.pageSize + idx + 1;
       const isSelected = this.selectedSenderEmails.has(s.email);
       const rowClass = isSelected ? 'selected' : '';
       const safeName = (s.name || s.email.split('@')[0]).replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -144,17 +216,17 @@ const app = {
 
       html += `
         <tr class="${rowClass}" onclick="app.openSenderModal(${s.id})">
-          <td style="text-align: center;" onclick="event.stopPropagation()">
-            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="app.toggleSenderSelect('${s.email}', this.checked)">
+          <td style="text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="app.toggleSenderSelect('${s.email}', this.checked)">
+              <span style="font-family: monospace; font-size: 11px; color: #555;">${rowNum}</span>
+            </div>
           </td>
           <td><strong>${safeName}</strong></td>
           <td>${safeEmail}</td>
           <td>${classBadge}</td>
           <td style="text-align: right; font-weight: bold;">${s.message_count.toLocaleString()}</td>
           <td style="font-size: 11px;">${s.last_seen ? s.last_seen.split(' ')[0] : '-'}</td>
-          <td style="text-align: center;" onclick="event.stopPropagation()">
-            <button class="system-btn" onclick="app.openSenderModal(${s.id})">Review</button>
-          </td>
         </tr>
       `;
     });
@@ -201,6 +273,9 @@ const app = {
       this.selectedSenderEmails.delete(email);
     }
     this.loadSenders();
+    this.generateFilterRules();
+    this.renderCleanFilterSelectedTable();
+    this.updatePoolButton();
   },
 
   toggleSelectAll(checked) {
@@ -221,16 +296,25 @@ const app = {
       this.selectedSenderEmails.clear();
     }
     this.loadSenders();
+    this.generateFilterRules();
+    this.renderCleanFilterSelectedTable();
+    this.updatePoolButton();
   },
 
   async selectJunkCandidates() {
     try {
+      if (!this.sendersCache) this.sendersCache = new Map();
       const res = await fetch('/api/senders?filter_type=newsletters&limit=500');
       if (!res.ok) return;
       const data = await res.json();
-      data.items.forEach(s => this.selectedSenderEmails.add(s.email));
+      data.items.forEach(s => {
+        this.selectedSenderEmails.add(s.email);
+        this.sendersCache.set(s.email, s);
+      });
       this.loadSenders();
       this.generateFilterRules();
+      this.renderCleanFilterSelectedTable();
+      this.updatePoolButton();
       this.showAlert('Selection Updated', `Selected ${data.items.length} newsletters and promotional senders`);
     } catch (err) {
       console.error(err);
@@ -241,14 +325,62 @@ const app = {
     this.selectedSenderEmails.clear();
     this.loadSenders();
     this.generateFilterRules();
+    this.renderCleanFilterSelectedTable();
+    this.updatePoolButton();
     this.showAlert('Selection Cleared', 'All selections removed');
   },
 
+  updatePoolButton() {
+    const poolBtn = document.getElementById('poolCleanBtn');
+    const scopeSwitcher = document.getElementById('aiCleanScopeSwitcher');
+    const scopePoolBtn = document.getElementById('aiScopePoolBtn');
+    const count = this.selectedSenderEmails.size;
+
+    if (poolBtn) {
+      if (count > 0) {
+        poolBtn.style.display = 'inline-block';
+        poolBtn.textContent = `Pool (${count})`;
+      } else {
+        poolBtn.style.display = 'none';
+      }
+    }
+
+    if (scopeSwitcher && scopePoolBtn) {
+      if (count > 0) {
+        scopeSwitcher.style.display = 'inline-flex';
+        scopePoolBtn.textContent = `Pooled Senders (${count})`;
+      } else {
+        scopeSwitcher.style.display = 'none';
+        this.aiCleanScope = 'all';
+      }
+    }
+  },
+
+  goToCleanPool() {
+    this.aiCleanScope = 'pool';
+    this.showCleanView(this.currentCleanMode || 'ai');
+    const poolBtn = document.getElementById('aiScopePoolBtn');
+    const allBtn = document.getElementById('aiScopeAllBtn');
+    if (poolBtn) poolBtn.classList.add('active');
+    if (allBtn) allBtn.classList.remove('active');
+  },
+
+  setAiCleanScope(scope) {
+    this.aiCleanScope = scope;
+    const poolBtn = document.getElementById('aiScopePoolBtn');
+    const allBtn = document.getElementById('aiScopeAllBtn');
+    if (scope === 'pool') {
+      if (poolBtn) poolBtn.classList.add('active');
+      if (allBtn) allBtn.classList.remove('active');
+    } else {
+      if (poolBtn) poolBtn.classList.remove('active');
+      if (allBtn) allBtn.classList.add('active');
+    }
+    this.filterAiCleanSenders();
+  },
+
   openFilterModal() {
-    const modal = document.getElementById('filterModal');
-    if (!modal) return;
-    this.generateFilterRules();
-    modal.classList.add('open');
+    this.showCleanView('filter');
   },
 
   closeFilterModal() {
@@ -258,10 +390,19 @@ const app = {
 
   async generateFilterRules() {
     const emails = Array.from(this.selectedSenderEmails);
-    const queryEl = document.getElementById('gmailQueryOutput');
+    const modalQueryEl = document.getElementById('gmailQueryOutput');
+    const cleanQueryEl = document.getElementById('cleanGmailQueryOutput');
+    const countEl = document.getElementById('cleanFilterSelectionCount');
+
+    if (countEl) {
+      countEl.textContent = `${emails.length} senders selected`;
+    }
 
     if (emails.length === 0) {
-      if (queryEl) queryEl.value = 'No senders selected. Check boxes next to senders or click Select All Newsletters and Ads.';
+      const emptyMsg = 'No senders selected. Check boxes next to senders or click Select All Newsletters and Ads.';
+      if (modalQueryEl) modalQueryEl.value = emptyMsg;
+      if (cleanQueryEl) cleanQueryEl.value = emptyMsg;
+      this._lastXmlContent = null;
       return;
     }
 
@@ -273,11 +414,67 @@ const app = {
       });
       if (!res.ok) throw new Error('Rule creation failed');
       const data = await res.json();
-      if (queryEl) queryEl.value = data.gmail_search_query;
+      if (modalQueryEl) modalQueryEl.value = data.gmail_search_query;
+      if (cleanQueryEl) cleanQueryEl.value = data.gmail_search_query;
       this._lastXmlContent = data.xml_content;
     } catch (err) {
       console.error(err);
     }
+  },
+
+  renderCleanFilterSelectedTable() {
+    const tbody = document.getElementById('cleanFilterSelectedTableBody');
+    const countEl = document.getElementById('cleanFilterSelectionCount');
+    if (countEl) {
+      countEl.textContent = `${this.selectedSenderEmails.size} senders selected`;
+    }
+    if (!tbody) return;
+
+    if (this.selectedSenderEmails.size === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 16px; color: #666;">No senders selected yet. Check boxes in the Senders tab or click Select All Newsletters and Ads above.</td></tr>';
+      return;
+    }
+
+    const emails = Array.from(this.selectedSenderEmails);
+    tbody.innerHTML = emails.map((email, idx) => {
+      const s = (this.sendersCache && this.sendersCache.get(email)) || {
+        name: email.split('@')[0],
+        email: email,
+        message_count: '-',
+        classification: 'newsletters'
+      };
+
+      const safeName = (s.name || email.split('@')[0]).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const safeEmail = email.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      let typeLabel = 'Newsletter';
+      if (s.classification === 'people') typeLabel = 'Personal';
+      if (s.classification === 'organizations') typeLabel = 'Company';
+      if (s.classification === 'mixed') typeLabel = 'Receipts and Ads';
+
+      const classBadge = `<span class="badge-pill badge-${s.classification || 'newsletters'}">${typeLabel}</span>`;
+      const countDisplay = typeof s.message_count === 'number' ? s.message_count.toLocaleString() : s.message_count;
+
+      return `
+        <tr>
+          <td style="text-align: center; font-family: monospace; font-size: 11px; color: #555;">${idx + 1}</td>
+          <td><strong>${safeName}</strong></td>
+          <td>${safeEmail}</td>
+          <td style="text-align: right; font-weight: bold;">${countDisplay}</td>
+          <td>${classBadge}</td>
+          <td style="text-align: center;">
+            <button class="system-btn danger" onclick="app.removeSelectedSender('${email}')">Remove</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  removeSelectedSender(email) {
+    this.selectedSenderEmails.delete(email);
+    this.loadSenders();
+    this.generateFilterRules();
+    this.renderCleanFilterSelectedTable();
+    this.updatePoolButton();
   },
 
   downloadXmlFile() {
@@ -333,21 +530,22 @@ const app = {
 
       const tbody = document.getElementById('modalSubjectsTableBody');
       if (data.messages && data.messages.length > 0) {
-        tbody.innerHTML = data.messages.map(m => {
+        tbody.innerHTML = data.messages.map((m, idx) => {
           let kind = 'General';
           if (m.is_transactional) kind = 'Receipt or Bill';
           if (m.is_promotional) kind = 'Ad or Promo';
           const safeSubj = (m.subject || 'No Subject').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           return `
             <tr>
-              <td style="width: 110px; font-size: 11px;">${m.date ? m.date.split(' ')[0] : '-'}</td>
+              <td style="width: 35px; text-align: center; font-family: monospace; font-size: 11px; color: #555;">${idx + 1}</td>
+              <td style="width: 100px; font-size: 11px;">${m.date ? m.date.split(' ')[0] : '-'}</td>
               <td>${safeSubj}</td>
               <td style="width: 120px; font-size: 11px;">${kind}</td>
             </tr>
           `;
         }).join('');
       } else {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center;">No recent emails found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No recent emails found</td></tr>`;
       }
     } catch (err) {
       console.error(err);
@@ -506,10 +704,16 @@ const app = {
         if (pFill) pFill.style.width = '100%';
         if (pPct) pPct.textContent = '100%';
         if (pMsg) pMsg.textContent = 'Upload complete! Reading emails from file...';
+        this._userInitiatedUpload = true;
         this.startStatusPolling();
       } else {
         if (pMsg) pMsg.textContent = 'Upload failed. Please check the file.';
-        this.showAlert('Upload Failed', 'The server could not accept the file');
+        let errMsg = 'The server could not accept the file';
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData && errData.detail) errMsg = errData.detail;
+        } catch (e) {}
+        this.showAlert('Upload Failed', errMsg);
       }
     };
 
@@ -526,7 +730,9 @@ const app = {
     try {
       const res = await fetch('/api/reset-db', { method: 'POST' });
       if (res.ok) {
+        this._userInitiatedUpload = false;
         this.selectedSenderEmails.clear();
+        this.updatePoolButton();
         this.totalMessages = 0;
         this.totalSenders = 0;
         this.loadStats();
@@ -569,10 +775,14 @@ const app = {
             return;
           } else if (status.status === 'completed') {
             if (pBar) pBar.classList.remove('visible');
-            this.showAlert('Import Finished', `Successfully read ${status.messages_processed.toLocaleString()} emails`);
-            this.showMainView();
+            if (this._userInitiatedUpload && status.messages_processed > 0) {
+              this.showAlert('Import Finished', `Successfully read ${status.messages_processed.toLocaleString()} emails`);
+              this.showMainView();
+            }
+            this._userInitiatedUpload = false;
           } else {
             if (pBar) pBar.classList.remove('visible');
+            this._userInitiatedUpload = false;
           }
         }
       } catch (err) {
@@ -616,6 +826,335 @@ const app = {
       document.documentElement.requestFullscreen().catch(() => {});
     } else {
       if (document.exitFullscreen) document.exitFullscreen();
+    }
+  },
+
+  showAiCleanView() {
+    this.showCleanView('ai');
+  },
+
+  showAiCleanSenderList() {
+    const listSec = document.getElementById('aiCleanSenderListSection');
+    const progSec = document.getElementById('aiCleanProgressSection');
+    const resSec = document.getElementById('aiCleanResultsSection');
+    if (listSec) listSec.style.display = 'flex';
+    if (progSec) progSec.style.display = 'none';
+    if (resSec) resSec.style.display = 'none';
+    this.loadAiCleanSenders();
+  },
+
+  async loadAiCleanSenders(search = '') {
+    const tbody = document.getElementById('aiCleanSendersTableBody');
+    if (!tbody) return;
+    try {
+      const url = search ? `/api/ai-clean/senders?search=${encodeURIComponent(search)}` : '/api/ai-clean/senders';
+      const res = await fetch(url);
+      const data = await res.json();
+      this.aiCleanSendersData = data.senders || [];
+
+      const knownEmails = new Set(this.aiCleanSendersData.map(s => s.email));
+      this.selectedSenderEmails.forEach(email => {
+        if (!knownEmails.has(email)) {
+          const cached = this.sendersCache && this.sendersCache.get(email);
+          this.aiCleanSendersData.push({
+            id: cached ? cached.id : null,
+            email: email,
+            name: cached ? cached.name : email.split('@')[0],
+            message_count: cached && typeof cached.message_count === 'number' ? cached.message_count : 1,
+            summarized_count: 0,
+            categories_count: 0
+          });
+        }
+      });
+
+      this.updatePoolButton();
+      this.filterAiCleanSenders();
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load senders</td></tr>';
+    }
+  },
+
+  filterAiCleanSenders() {
+    const q = (document.getElementById('aiCleanSearchInput')?.value || '').toLowerCase();
+    if (!this.aiCleanSendersData) return;
+
+    let list = this.aiCleanSendersData;
+    if (this.aiCleanScope === 'pool' && this.selectedSenderEmails.size > 0) {
+      list = list.filter(s => this.selectedSenderEmails.has(s.email));
+    }
+
+    if (q) {
+      list = list.filter(s => 
+        s.email.toLowerCase().includes(q) || (s.name || '').toLowerCase().includes(q)
+      );
+    }
+    this.renderAiCleanSenders(list);
+  },
+
+  renderAiCleanSenders(senders) {
+    const tbody = document.getElementById('aiCleanSendersTableBody');
+    if (!tbody) return;
+    if (!senders || senders.length === 0) {
+      if (this.aiCleanScope === 'pool') {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #777;">No pooled senders. Check boxes in the Senders tab to add senders to the pool.</td></tr>';
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #777;">No senders found</td></tr>';
+      }
+      return;
+    }
+
+    tbody.innerHTML = senders.map((s, idx) => {
+      const isComplete = s.categories_count > 0;
+      let statusHtml = '';
+      let actionBtn = '';
+
+      if (isComplete) {
+        statusHtml = `<span style="color: #1b6e34; font-weight: bold;">Completed (${s.categories_count} categories)</span>`;
+        actionBtn = `<button class="system-btn primary" onclick="app.viewAiCleanCategories('${s.email}')">View Categories</button>`;
+      } else if (s.summarized_count > 0) {
+        const pct = Math.round((s.summarized_count / s.message_count) * 100);
+        statusHtml = `<span style="color: #9c6500; font-weight: bold;">Summarized ${s.summarized_count}/${s.message_count} (${pct}%)</span>`;
+        actionBtn = `<button class="system-btn primary" onclick="app.startSenderAiClean('${s.email}')">Continue Analysis</button>`;
+      } else {
+        statusHtml = '<span style="color: #666;">Ready to scan</span>';
+        actionBtn = `<button class="system-btn" onclick="app.startSenderAiClean('${s.email}')">Analyze with Local AI</button>`;
+      }
+
+      const safeName = (s.name || s.email.split('@')[0]).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const safeEmail = s.email.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      return `
+        <tr>
+          <td style="text-align: center; font-family: monospace; font-size: 11px; color: #555;">${idx + 1}</td>
+          <td><strong>${safeName}</strong></td>
+          <td>${safeEmail}</td>
+          <td style="text-align: right; font-weight: bold;">${s.message_count.toLocaleString()}</td>
+          <td>${statusHtml}</td>
+          <td style="text-align: center;">${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  async startSenderAiClean(email) {
+    try {
+      const res = await fetch('/api/ai-clean/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      const data = await res.json();
+      if (!res.ok && res.status !== 409) {
+        this.showAlert('Analysis Error', data.detail || 'Could not start analysis');
+        return;
+      }
+
+      this.activeAiCleanEmail = email;
+      const listSec = document.getElementById('aiCleanSenderListSection');
+      const progSec = document.getElementById('aiCleanProgressSection');
+      const resSec = document.getElementById('aiCleanResultsSection');
+      if (listSec) listSec.style.display = 'none';
+      if (progSec) progSec.style.display = 'flex';
+      if (resSec) resSec.style.display = 'none';
+
+      document.getElementById('aiCleanProgressTitle').textContent = `Analyzing ${email}`;
+      document.getElementById('aiCleanProgressSubtitle').textContent = 'Local AI is reading and generating summaries for every email from this sender.';
+      this.pollAiCleanStatus(email);
+    } catch (e) {
+      console.error(e);
+      this.showAlert('Error', 'Failed to connect to local AI analysis');
+    }
+  },
+
+  pollAiCleanStatus(email) {
+    if (this.aiCleanPollInterval) clearInterval(this.aiCleanPollInterval);
+
+    this.aiCleanPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/ai-clean/status');
+        const status = await res.json();
+
+        const pBar = document.getElementById('aiCleanProgressBar');
+        const pCounter = document.getElementById('aiCleanProgressCounter');
+        const pPercent = document.getElementById('aiCleanProgressPercent');
+        const pSubject = document.getElementById('aiCleanProgressSubject');
+        const pStage = document.getElementById('aiCleanProgressStage');
+
+        if (pBar) pBar.style.width = `${status.percent || 0}%`;
+        if (pPercent) pPercent.textContent = `${status.percent || 0}%`;
+        if (pCounter) pCounter.textContent = `${status.processed || 0} / ${status.total || 0} emails`;
+        if (pSubject && status.current_subject) pSubject.textContent = status.current_subject;
+
+        if (status.stage === 'loading_model') {
+          if (pStage) pStage.textContent = 'Loading local model into memory...';
+        } else if (status.stage === 'summarizing') {
+          if (pStage) pStage.textContent = 'Step 1 of 2: Generating local summaries for each email';
+        } else if (status.stage === 'categorizing') {
+          if (pStage) pStage.textContent = 'Step 2 of 2: Grouping emails into categories and building search rules';
+        }
+
+        if (status.status === 'completed' && status.sender === email) {
+          clearInterval(this.aiCleanPollInterval);
+          this.viewAiCleanCategories(email);
+        } else if (status.status === 'error') {
+          clearInterval(this.aiCleanPollInterval);
+          this.showAlert('Analysis Notice', status.error || 'Local AI analysis encountered an error');
+          this.showAiCleanSenderList();
+          this.loadAiCleanSenders();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 800);
+  },
+
+  async viewAiCleanCategories(email) {
+    this.activeAiCleanEmail = email;
+    const listSec = document.getElementById('aiCleanSenderListSection');
+    const progSec = document.getElementById('aiCleanProgressSection');
+    const resSec = document.getElementById('aiCleanResultsSection');
+    if (listSec) listSec.style.display = 'none';
+    if (progSec) progSec.style.display = 'none';
+    if (resSec) resSec.style.display = 'flex';
+
+    const header = document.getElementById('aiCleanResultsHeader');
+    if (header) header.textContent = `Categories for ${email}`;
+
+    const container = document.getElementById('aiCleanCategoriesContainer');
+    if (!container) return;
+    container.innerHTML = '<div style="text-align: center; padding: 20px;">Loading categories...</div>';
+
+    try {
+      const res = await fetch(`/api/ai-clean/categories?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      const cats = data.categories || [];
+
+      if (cats.length === 0) {
+        container.innerHTML = `
+          <div style="background: #fff; border: 1px solid var(--border-dark); padding: 20px; text-align: center;">
+            <div style="margin-bottom: 10px; font-weight: bold;">No categories found yet for this sender.</div>
+            <button class="system-btn primary" onclick="app.startSenderAiClean('${email}')">Run Local AI Analysis</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = cats.map((cat, idx) => {
+        const safeName = cat.category_name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeDesc = (cat.description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeQuery = (cat.gmail_query || `from:${email}`).replace(/"/g, '&quot;');
+        const count = cat.message_count || 0;
+
+        return `
+          <div style="background: var(--base-light); border: 2px solid var(--border-dark); padding: 14px; box-shadow: 2px 2px 0 rgba(0,0,0,0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-size: 14px; font-weight: bold; color: var(--crimson-accent);">${safeName}</div>
+              <div style="font-size: 11px; font-weight: bold; background: #fff; border: 1px solid var(--border-dark); padding: 2px 8px;">
+                ${count.toLocaleString()} emails
+              </div>
+            </div>
+            <div style="font-size: 12px; color: var(--base-dark); margin-bottom: 12px; line-height: 1.4;">
+              ${safeDesc}
+            </div>
+            <div style="font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #444;">Gmail Delete Search Query:</div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+              <input type="text" id="catQuery_${idx}" class="system-input" style="flex: 1; font-family: monospace; font-size: 11px;" value="${safeQuery}" readonly>
+              <button class="system-btn primary" onclick="app.copyQueryFromInput('catQuery_${idx}')">Copy Query</button>
+              <button class="system-btn" onclick="app.downloadCategoryXmlFilter('${email}', '${safeName}', '${safeQuery}')">Download Filter</button>
+            </div>
+            <div style="font-size: 11px; color: #666;">
+              Paste this query in Gmail search bar to view and delete only the ${count.toLocaleString()} emails in this category.
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = '<div style="color: red; text-align: center;">Failed to load categories</div>';
+    }
+  },
+
+  copyQueryFromInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+      this.showAlert('Copied', 'Gmail search query copied to clipboard. Paste into Gmail search bar to select and delete these emails.');
+    }).catch(() => {
+      document.execCommand('copy');
+      this.showAlert('Copied', 'Gmail search query copied to clipboard.');
+    });
+  },
+
+  async downloadCategoryXmlFilter(email, categoryName, query) {
+    try {
+      const res = await fetch('/api/ai-clean/category-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          category_name: categoryName,
+          gmail_query: query
+        })
+      });
+      const data = await res.json();
+      const blob = new Blob([data.xml_content], { type: 'text/xml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `filter_${categoryName.toLowerCase().replace(/[^a-z0-9]/g, '_')}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      this.showAlert('Error', 'Failed to generate category filter file');
+    }
+  },
+
+  async loadVizStats() {
+    try {
+      const res = await fetch('/api/viz-stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      const cats = data.categories || {};
+      const news = cats.newsletters || { message_count: 0, message_percent: 0 };
+      const mixed = cats.mixed || { message_count: 0, message_percent: 0 };
+      const orgs = cats.organizations || { message_count: 0, message_percent: 0 };
+      const people = cats.people || { message_count: 0, message_percent: 0 };
+
+      const barNews = document.getElementById('vizBarNewsletters');
+      const barMixed = document.getElementById('vizBarMixed');
+      const barOrgs = document.getElementById('vizBarOrgs');
+      const barPeople = document.getElementById('vizBarPeople');
+
+      if (barNews) barNews.style.width = `${news.message_percent}%`;
+      if (barMixed) barMixed.style.width = `${mixed.message_percent}%`;
+      if (barOrgs) barOrgs.style.width = `${orgs.message_percent}%`;
+      if (barPeople) barPeople.style.width = `${people.message_percent}%`;
+
+      const elNewsCnt = document.getElementById('vizNewslettersCount');
+      const elNewsPct = document.getElementById('vizNewslettersPct');
+      const elMixedCnt = document.getElementById('vizMixedCount');
+      const elMixedPct = document.getElementById('vizMixedPct');
+      const elOrgsCnt = document.getElementById('vizOrgsCount');
+      const elOrgsPct = document.getElementById('vizOrgsPct');
+      const elPeopleCnt = document.getElementById('vizPeopleCount');
+      const elPeoplePct = document.getElementById('vizPeoplePct');
+
+      if (elNewsCnt) elNewsCnt.textContent = news.message_count.toLocaleString();
+      if (elNewsPct) elNewsPct.textContent = `${news.message_percent}%`;
+      if (elMixedCnt) elMixedCnt.textContent = mixed.message_count.toLocaleString();
+      if (elMixedPct) elMixedPct.textContent = `${mixed.message_percent}%`;
+      if (elOrgsCnt) elOrgsCnt.textContent = orgs.message_count.toLocaleString();
+      if (elOrgsPct) elOrgsPct.textContent = `${orgs.message_percent}%`;
+      if (elPeopleCnt) elPeopleCnt.textContent = people.message_count.toLocaleString();
+      if (elPeoplePct) elPeoplePct.textContent = `${people.message_percent}%`;
+    } catch (e) {
+      console.error(e);
     }
   }
 };

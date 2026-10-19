@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CleanMail - Email Cleaner</title>
+  <title>CleanMail</title>
   <link rel="stylesheet" href="/static/system.css">
   <link rel="stylesheet" href="/static/retro_theme.css">
 </head>
@@ -18,18 +18,82 @@
         </div>
         <div class="menu-item" onclick="app.showUploadView()">Upload File</div>
         <div class="menu-item" onclick="app.showMainView()">Senders</div>
-        <div class="menu-item" onclick="app.openFilterModal()">Create Filter</div>
+        <div class="menu-item" onclick="app.showCleanView()">Clean</div>
         <div class="menu-item" onclick="app.resetDatabase()">Reset All</div>
       </div>
     </header>
 
     <!-- Main Desktop Viewport -->
     <main class="desktop-viewport">
+      <!-- LEFT AD SIDEBAR -->
+      <aside class="retro-ad-sidebar retro-ad-sidebar--left">
+        <!-- Ad 1: Vertical Banner -->
+        <div class="retro-ad retro-ad--banner-left">
+          <div class="retro-ad__border">
+            <div class="retro-ad__header-strip">★ DEVELOPER FOR HIRE ★</div>
+            <div class="retro-ad__body">
+              <div class="retro-ad__avatar-ring">
+                <img src="/static/me.jpeg" alt="Khwahish" class="retro-ad__avatar-img">
+              </div>
+              <div class="retro-ad__name">KHWAHISH SHARMA</div>
+              <div class="retro-ad__tagline">Will Code For Pizza.<br>Makes systems behave.*<br>Builds free tools for fun.<br><em>Someone please hire this man!</em></div>
+              <div class="retro-ad__fine-print">*occasionally. Dangerously Good At Making Free Software.</div>
+              <div class="retro-ad__divider"></div>
+              <div class="retro-ad__skills-title">★ TECH STACK ★</div>
+              <div class="retro-ad__skill-tags">
+                <span class="retro-ad__tag">C</span>
+                <span class="retro-ad__tag">C++</span>
+                <span class="retro-ad__tag">Go</span>
+                <span class="retro-ad__tag">Rust</span>
+                <span class="retro-ad__tag">Python</span>
+                <span class="retro-ad__tag">Java</span>
+                <span class="retro-ad__tag">Bash</span>
+                <span class="retro-ad__tag">Spring</span>
+                <span class="retro-ad__tag">Node.js</span>
+                <span class="retro-ad__tag">AWS</span>
+                <span class="retro-ad__tag">Docker</span>
+                <span class="retro-ad__tag">PostgreSQL</span>
+                <span class="retro-ad__tag">MongoDB</span>
+              </div>
+              <div class="retro-ad__divider"></div>
+              <a href="https://github.com/kwhx" target="_blank" rel="noopener" class="retro-ad__link-btn">
+                &#9758; GitHub
+              </a>
+              <a href="https://www.linkedin.com/in/khwahish-s-a633a82a0/" target="_blank" rel="noopener" class="retro-ad__link-btn retro-ad__link-btn--alt">
+                &#9758; LinkedIn
+              </a>
+              <a href="https://khwahishiscooking.in/" target="_blank" rel="noopener" class="retro-ad__link-btn">
+                &#9758; Portfolio
+              </a>
+            </div>
+            <div class="retro-ad__footer-strip">FREE &amp; OPEN SOURCE</div>
+          </div>
+        </div>
+
+        <!-- Ad 2: Star/Starburst Pulsing Badge -->
+        <div class="retro-ad retro-ad--star-badge">
+          <div class="retro-starburst retro-starburst--pulse">
+            <div class="retro-starburst__inner">
+              <span class="retro-starburst__call-sub">BETTER CALL</span>
+              <span class="retro-starburst__call-main">KHWAHISH</span>
+            </div>
+          </div>
+          <div class="retro-ad__mini-cta retro-ad__mini-cta--borderless">
+            <span class="retro-ad__blink-text">Now Accepting Opportunities</span>
+          </div>
+        </div>
+
+        <!-- Ad 3: Happy Cat Sticker (Local GIF 1) -->
+        <div class="retro-ad retro-ad--sticker retro-ad--sticker-gif1">
+          <img src="/static/gif1.gif" alt="Happy Cat Sticker" class="retro-sticker-img retro-sticker-img--gif1">
+        </div>
+      </aside>
+
       <div class="retro-main-window">
         <!-- Pinstripe Title Bar -->
         <div class="system-title-bar">
           <button class="window-box-btn" aria-label="Close Window" onclick="app.resetView()"></button>
-          <div class="window-title-badge" id="windowTitleBadge">CleanMail - Email Cleaner</div>
+          <div class="window-title-badge" id="windowTitleBadge">CleanMail</div>
           <button class="window-box-btn" aria-label="Zoom Window" onclick="app.toggleFullscreen()"></button>
         </div>
 
@@ -77,10 +141,8 @@
               <button class="segmented-btn" data-filter="mixed" onclick="app.setFilter('mixed')">Receipts and Ads</button>
             </div>
 
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <input type="text" id="searchInput" class="system-input" placeholder="Search sender or company..." style="width: 200px;" oninput="app.handleSearch(this.value)">
-              <button class="system-btn primary" onclick="app.openFilterModal()">Create Gmail Filter</button>
-              <button class="system-btn" onclick="app.showUploadView()">Upload File</button>
+            <div>
+              <input type="text" id="searchInput" class="system-input" placeholder="Search sender or company" style="width: 240px;" oninput="app.handleSearch(this.value)">
             </div>
           </div>
 
@@ -95,23 +157,63 @@
           <!-- Senders Table -->
           <div class="window-body-viewport">
             <div class="table-scroll-viewport">
+              <!-- All Senders Visualizations (Scrollable with Table, Only on All Senders tab) -->
+              <div id="allSendersVizContainer" style="display: block; padding: 10px 12px; background: #e8e8e8; border-bottom: 2px solid var(--border-dark);">
+                
+                <!-- VIZ: Category Breakdown -->
+                <div style="background: var(--pure-white); border: 2px solid var(--border-dark); padding: 12px; box-shadow: 2px 2px 0 var(--border-dark); display: flex; flex-direction: column;">
+                  <div style="font-size: 13px; font-weight: bold; color: var(--crimson-accent); margin-bottom: 8px;">Inbox Category Breakdown</div>
+                  
+                  <!-- Retro Segmented Bar -->
+                  <div id="vizBreakdownBar" style="height: 22px; width: 100%; border: 2px solid var(--border-dark); display: flex; background: #ddd; margin-bottom: 12px; overflow: hidden;">
+                    <div id="vizBarNewsletters" style="width: 51.2%; background: #9c6500; border-right: 1px solid var(--border-dark); height: 100%;" title="Newsletters and Ads"></div>
+                    <div id="vizBarMixed" style="width: 27.3%; background: #a01015; border-right: 1px solid var(--border-dark); height: 100%;" title="Receipts and Ads"></div>
+                    <div id="vizBarOrgs" style="width: 17.4%; background: #0d6077; border-right: 1px solid var(--border-dark); height: 100%;" title="Companies"></div>
+                    <div id="vizBarPeople" style="width: 4.1%; background: #1b6e34; height: 100%;" title="Personal"></div>
+                  </div>
+
+                  <!-- Legend and Stats Table -->
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; background: #9c6500; border: 1px solid var(--border-dark);"></span>
+                      <span>Newsletters: <strong id="vizNewslettersCount">6,964</strong> (<span id="vizNewslettersPct">51.2%</span>)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; background: #a01015; border: 1px solid var(--border-dark);"></span>
+                      <span>Receipts and Ads: <strong id="vizMixedCount">3,712</strong> (<span id="vizMixedPct">27.3%</span>)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; background: #0d6077; border: 1px solid var(--border-dark);"></span>
+                      <span>Companies: <strong id="vizOrgsCount">2,369</strong> (<span id="vizOrgsPct">17.4%</span>)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; background: #1b6e34; border: 1px solid var(--border-dark);"></span>
+                      <span>Personal: <strong id="vizPeopleCount">559</strong> (<span id="vizPeoplePct">4.1%</span>)</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
               <table class="retro-table" id="sendersTable">
                 <thead>
                   <tr>
-                    <th style="width: 38px; text-align: center;">
-                      <input type="checkbox" id="selectAllSendersCheckbox" onchange="app.toggleSelectAll(this.checked)">
+                    <th style="width: 55px; text-align: center;">
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <input type="checkbox" id="selectAllSendersCheckbox" onchange="app.toggleSelectAll(this.checked)">
+                        <span>#</span>
+                      </div>
                     </th>
                     <th onclick="app.sortBy('name')">Sender Name</th>
                     <th onclick="app.sortBy('email')">Email Address</th>
                     <th onclick="app.sortBy('classification')">Type</th>
                     <th onclick="app.sortBy('volume')" class="sort-active" id="colSortVolume">Emails Sent ▼</th>
                     <th onclick="app.sortBy('last_seen')">Last Email</th>
-                    <th style="text-align: center;">AI Review</th>
                   </tr>
                 </thead>
                 <tbody id="sendersTableBody">
                   <tr>
-                    <td colspan="7" style="text-align: center; padding: 24px; color: #666;">
+                    <td colspan="6" style="text-align: center; padding: 24px; color: #666;">
                       No emails loaded yet. Click Upload File above to start.
                     </td>
                   </tr>
@@ -123,6 +225,7 @@
             <div class="window-footer-bar">
               <div id="paginationSummary">Showing 0 of 0 senders</div>
               <div class="pagination-controls">
+                <button class="system-btn primary" id="poolCleanBtn" onclick="app.goToCleanPool()" style="display: none;">Pool (0)</button>
                 <button class="system-btn" id="prevPageBtn" onclick="app.prevPage()" disabled>Previous</button>
                 <span id="currentPageIndicator">Page 1</span>
                 <button class="system-btn" id="nextPageBtn" onclick="app.nextPage()">Next</button>
@@ -130,7 +233,196 @@
             </div>
           </div>
         </div>
+
+        <!-- VIEW 3: Consolidated Clean View -->
+        <div id="cleanView" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+          <!-- Top Clean Mode Switcher Bar -->
+          <div class="system-toolbar" style="border-bottom: 2px solid var(--border-dark); justify-content: space-between;">
+            <div class="segmented-control" id="cleanModeSwitcher">
+              <button class="segmented-btn active" id="cleanModeAiBtn" onclick="app.switchCleanMode('ai')">AI Deep Clean</button>
+              <button class="segmented-btn" id="cleanModeFilterBtn" onclick="app.switchCleanMode('filter')">Quick Batch Filter</button>
+            </div>
+            <div style="font-size: 11px; color: #555;" id="cleanModeSubtitle">
+              Local AI scans and categorizes emails per sender to build precision rules.
+            </div>
+          </div>
+
+          <!-- Mode 1: AI Deep Clean -->
+          <div id="cleanAiModeContainer" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+            <!-- Sub-view 1: Sender List -->
+            <div id="aiCleanSenderListSection" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+              <div style="padding: 10px 14px; background: var(--base-light); border-bottom: 2px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 14px; font-weight: bold; color: var(--crimson-accent);">AI Clean - Local Sender Categorizer</div>
+                  <div style="font-size: 11px; color: #555;">Select a sender to locally summarize all emails, group them into categories, and generate precision Gmail cleanup rules.</div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <div class="segmented-control" id="aiCleanScopeSwitcher" style="display: none;">
+                    <button class="segmented-btn active" id="aiScopePoolBtn" onclick="app.setAiCleanScope('pool')">Pooled Senders (0)</button>
+                    <button class="segmented-btn" id="aiScopeAllBtn" onclick="app.setAiCleanScope('all')">All Senders</button>
+                  </div>
+                  <input type="text" id="aiCleanSearchInput" class="system-input" placeholder="Search senders" style="width: 180px;" oninput="app.filterAiCleanSenders()">
+                </div>
+              </div>
+
+              <div class="table-scroll-viewport" style="flex: 1;">
+                <table class="retro-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 45px; text-align: center;">#</th>
+                      <th>Sender Name</th>
+                      <th>Email Address</th>
+                      <th style="text-align: right;">Total Emails</th>
+                      <th>Local AI Status</th>
+                      <th style="text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aiCleanSendersTableBody">
+                    <tr><td colspan="6" style="text-align: center; padding: 20px;">Loading senders...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Sub-view 2: Live Progress Card -->
+            <div id="aiCleanProgressSection" style="display: none; padding: 30px; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
+              <div style="background: var(--base-light); border: 3px solid var(--border-dark); box-shadow: 4px 4px 0 var(--deep-shadow); max-width: 600px; width: 100%; padding: 24px; text-align: center;">
+                <div style="font-size: 16px; font-weight: bold; color: var(--crimson-accent); margin-bottom: 6px;" id="aiCleanProgressTitle">Scanning & Summarizing Emails</div>
+                <div style="font-size: 12px; margin-bottom: 16px; color: var(--base-dark);" id="aiCleanProgressSubtitle">Local AI is reading and summarizing each email from this sender.</div>
+
+                <div class="retro-progress-track" style="margin-bottom: 8px;">
+                  <div class="retro-progress-fill" id="aiCleanProgressBar" style="width: 0%;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 12px;">
+                  <span id="aiCleanProgressCounter">0 / 0 emails</span>
+                  <span id="aiCleanProgressPercent">0%</span>
+                </div>
+
+                <div style="background: #fff; border: 1px solid var(--border-dark); padding: 8px 12px; text-align: left; font-size: 11px; margin-bottom: 16px;">
+                  <div style="font-weight: bold; color: #666; margin-bottom: 2px;">Current Email:</div>
+                  <div id="aiCleanProgressSubject" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace;">Waiting to start...</div>
+                </div>
+
+                <div style="font-size: 11px; color: #666;" id="aiCleanProgressStage">Step 1 of 2: Generating local summaries</div>
+              </div>
+            </div>
+
+            <!-- Sub-view 3: Categories & Clean-up Rules -->
+            <div id="aiCleanResultsSection" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+              <div style="padding: 10px 14px; background: var(--base-light); border-bottom: 2px solid var(--border-dark); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 14px; font-weight: bold; color: var(--crimson-accent);" id="aiCleanResultsHeader">Categories for Sender</div>
+                  <div style="font-size: 11px; color: #555;">Choose a category below to copy its Gmail search query or export a filter to delete it.</div>
+                </div>
+                <div>
+                  <button class="system-btn" onclick="app.showAiCleanSenderList()">Back to Senders</button>
+                </div>
+              </div>
+
+              <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px;" id="aiCleanCategoriesContainer">
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode 2: Quick Batch Filter -->
+          <div id="cleanFilterModeContainer" style="display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 16px;">
+            <div style="background: var(--base-light); border: 2px solid var(--border-dark); padding: 14px; box-shadow: 2px 2px 0 var(--border-dark); margin-bottom: 14px;">
+              <div style="font-size: 14px; font-weight: bold; color: var(--crimson-accent); margin-bottom: 4px;">Quick Batch Filter</div>
+              <div style="font-size: 12px; color: var(--base-dark); margin-bottom: 12px;">
+                Select senders or newsletters to filter out in Gmail. Copy the search query to test it in Gmail, or download the filter file to import directly.
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                <button class="system-btn primary" onclick="app.selectJunkCandidates()">Select All Newsletters and Ads</button>
+                <button class="system-btn" onclick="app.clearSelection()">Deselect All</button>
+                <span style="font-size: 11px; font-weight: bold; margin-left: 8px;" id="cleanFilterSelectionCount">0 senders selected</span>
+              </div>
+
+              <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Gmail Search Query:</div>
+              <textarea id="cleanGmailQueryOutput" class="mono-preview" style="width: 100%; height: 70px; resize: none; margin-bottom: 8px;" readonly placeholder="Select senders to generate query"></textarea>
+              <div style="margin-bottom: 16px;">
+                <button class="system-btn" onclick="app.copyToClipboard('cleanGmailQueryOutput')">Copy Query</button>
+              </div>
+
+              <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Download Filter File for Gmail:</div>
+              <div style="font-size: 12px; margin-bottom: 8px; color: #444;">
+                Import this file in Gmail under Settings > Filters and Blocked Addresses > Import filters.
+              </div>
+              <button class="system-btn primary" onclick="app.downloadXmlFile()">Download mailFilters.xml</button>
+            </div>
+
+            <!-- Selected Senders Table -->
+            <div style="background: var(--pure-white); border: 2px solid var(--border-dark); box-shadow: 2px 2px 0 var(--border-dark); flex: 1; display: flex; flex-direction: column;">
+              <div style="padding: 8px 12px; background: var(--base-light); border-bottom: 1px solid var(--border-dark); font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Selected Senders for Filter</span>
+                <span style="font-size: 11px; color: #666;" id="cleanFilterTableSub">Manage selected senders</span>
+              </div>
+              <div class="table-scroll-viewport" style="max-height: 280px;">
+                <table class="retro-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 45px; text-align: center;">#</th>
+                      <th>Sender Name</th>
+                      <th>Email Address</th>
+                      <th style="text-align: right;">Emails</th>
+                      <th>Type</th>
+                      <th style="text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cleanFilterSelectedTableBody">
+                    <tr><td colspan="6" style="text-align: center; padding: 16px; color: #666;">No senders selected yet. Check boxes in the Senders tab or click Select All Newsletters and Ads above.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- RIGHT AD SIDEBAR -->
+      <aside class="retro-ad-sidebar retro-ad-sidebar--right">
+        <!-- Ad 1: Open Source Banner -->
+        <div class="retro-ad retro-ad--banner-right">
+          <div class="retro-ad__border retro-ad__border--alt">
+            <div class="retro-ad__header-strip retro-ad__header-strip--alt">★ OPEN SOURCE ★</div>
+            <div class="retro-ad__body">
+              <div class="retro-ad__badge-stamp">&lt; 100% FREE &gt;</div>
+              <div class="retro-ad__catchphrase">This Tool<br>is <em>FREE</em></div>
+              <div class="retro-ad__sub-catchphrase">Built by one dev,<br>for everyone.</div>
+              <div class="retro-ad__divider"></div>
+              <div class="retro-ad__counter-label">Lines of Code Written</div>
+              <div class="retro-ad__counter" id="retroLinesCounter">4,200+</div>
+              <div class="retro-ad__counter-label">Coffees Consumed</div>
+              <div class="retro-ad__counter retro-ad__counter--small">∞</div>
+              <div class="retro-ad__divider"></div>
+              <div class="retro-ad__cta-text">Like this tool?</div>
+              <a href="https://github.com/kwhx" target="_blank" rel="noopener" class="retro-ad__link-btn retro-ad__link-btn--star">
+                &#9758; Star on GitHub
+              </a>
+              <div class="retro-ad__cta-text" style="margin-top: 8px;">Want to collab?</div>
+              <a href="https://www.linkedin.com/in/khwahish-s-a633a82a0/" target="_blank" rel="noopener" class="retro-ad__link-btn retro-ad__link-btn--alt">
+                &#9758; Connect on LinkedIn
+              </a>
+            </div>
+            <div class="retro-ad__footer-strip retro-ad__footer-strip--alt">
+              <span class="retro-ad__blink-text">&#9733; HIRE ME &#9733;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ad 2: Retro Cat Meme Card -->
+        <div class="retro-ad retro-ad--cat-box">
+          <div class="retro-cat-frame">
+            <img src="/static/cat-cat-meme.gif" alt="Cat Meme" class="retro-cat-gif">
+          </div>
+        </div>
+
+        <!-- Ad 3: Cat Eating Chips Sticker (Local GIF 2) -->
+        <div class="retro-ad retro-ad--sticker">
+          <img src="/static/gif2.gif" alt="Cat Eating Chips Sticker" class="retro-sticker-img">
+        </div>
+      </aside>
     </main>
   </div>
 
@@ -197,6 +489,7 @@
             <table class="retro-table">
               <thead>
                 <tr>
+                  <th style="width: 35px; text-align: center;">#</th>
                   <th>Date</th>
                   <th>Subject</th>
                   <th>Kind</th>

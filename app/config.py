@@ -8,7 +8,13 @@ DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "clean_mail.db"
 UPLOAD_DIR = DATA_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+TMP_DIR = DATA_DIR / "tmp"
+TMP_DIR.mkdir(exist_ok=True)
 CONFIG_FILE = DATA_DIR / "settings.json"
+
+import tempfile
+os.environ["TMPDIR"] = str(TMP_DIR)
+tempfile.tempdir = str(TMP_DIR)
 
 def get_gemini_api_key() -> str:
     if os.environ.get("GEMINI_API_KEY"):

@@ -96,9 +96,28 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_messages_date ON messages(date);
             CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);
             CREATE INDEX IF NOT EXISTS idx_domains_count ON domains(message_count DESC);
+            CREATE TABLE IF NOT EXISTS sender_ai_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_email TEXT NOT NULL,
+                category_name TEXT NOT NULL,
+                description TEXT,
+                message_count INTEGER DEFAULT 0,
+                gmail_query TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(sender_email, category_name)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_sender_ai_cat ON sender_ai_categories(sender_email);
         """)
 
         cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(messages);")
+        existing_cols = [row[1] for row in cursor.fetchall()]
+        if "summary" not in existing_cols:
+            conn.execute("ALTER TABLE messages ADD COLUMN summary TEXT;")
+        if "ai_category" not in existing_cols:
+            conn.execute("ALTER TABLE messages ADD COLUMN ai_category TEXT;")
+
         cursor.execute("SELECT COUNT(*) FROM indexing_status WHERE id = 1;")
         if cursor.fetchone()[0] == 0:
             cursor.execute(
@@ -375,3 +394,76 @@ def commit_batch(messages: List[Dict[str, Any]], senders_dict: Dict[str, Dict[st
                 msg.get("is_promotional", 0)
             ))
     conn.close()
+
+def get_sender_messages_for_ai(sender_email: str) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, message_id, subject, date, timestamp, body_snippet, summary, ai_category
+        FROM messages
+        WHERE sender_email = ?
+        ORDER BY timestamp DESC;
+    """, (sender_email,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def save_message_summaries_batch(updates: List[Tuple[str, str]]) -> None:
+    conn = get_connection()
+    with conn:
+        conn.executemany("UPDATE messages SET summary = ? WHERE message_id = ?;", updates)
+    conn.close()
+
+def save_message_categories_batch(updates: List[Tuple[str, str]]) -> None:
+    conn = get_connection()
+    with conn:
+        conn.executemany("UPDATE messages SET ai_category = ? WHERE message_id = ?;", updates)
+    conn.close()
+
+def save_sender_ai_categories(sender_email: str, categories: List[Dict[str, Any]]) -> None:
+    conn = get_connection()
+    with conn:
+        conn.execute("DELETE FROM sender_ai_categories WHERE sender_email = ?;", (sender_email,))
+        for cat in categories:
+            conn.execute("""
+                INSERT INTO sender_ai_categories (sender_email, category_name, description, message_count, gmail_query)
+                VALUES (?, ?, ?, ?, ?);
+            """, (
+                sender_email,
+                cat.get("category_name", "General"),
+                cat.get("description", ""),
+                cat.get("message_count", 0),
+                cat.get("gmail_query", "")
+            ))
+    conn.close()
+
+def get_sender_ai_categories(sender_email: str) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, category_name, description, message_count, gmail_query, created_at
+        FROM sender_ai_categories
+        WHERE sender_email = ?
+        ORDER BY message_count DESC;
+    """, (sender_email,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_sender_ai_stats(sender_email: str) -> Dict[str, Any]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM messages WHERE sender_email = ?;", (sender_email,))
+    total = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM messages WHERE sender_email = ? AND summary IS NOT NULL AND summary != '';", (sender_email,))
+    summarized = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM sender_ai_categories WHERE sender_email = ?;", (sender_email,))
+    cat_count = cursor.fetchone()[0]
+    conn.close()
+    return {
+        "total_messages": total,
+        "summarized_count": summarized,
+        "categories_count": cat_count,
+        "is_complete": total > 0 and summarized >= total and cat_count > 0
+    }
+
