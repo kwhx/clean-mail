@@ -1,0 +1,699 @@
+/* Retro Apple System 7 / Platinum UI Theme with Crimson Color Palette */
+
+:root {
+  --base-light: #d9d9d9;
+  --base-dark: #1a0a0f;
+  --crimson-accent: #55100d;
+  --vibrant-red: #dd0200;
+  --deep-shadow: #1a0706;
+  --highlight-bg: #f6e6ea;
+  --highlight-text: #1a0a0f;
+  --pure-white: #ffffff;
+  --pure-black: #000000;
+  --bevel-light: #ffffff;
+  --bevel-dark: #808080;
+  --border-dark: #1a0a0f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #55100d;
+  background-image: radial-gradient(#1a0706 15%, transparent 16%), radial-gradient(#1a0706 15%, transparent 16%);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+  font-family: "Geneva", "Chicago", "Helvetica Neue", Arial, sans-serif;
+  color: var(--base-dark);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* System Desktop Shell */
+.system-desktop {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top System Menu Bar */
+.retro-menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  background: var(--base-light);
+  border-bottom: 2px solid var(--border-dark);
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: bold;
+  user-select: none;
+  box-shadow: 0 1px 0 var(--bevel-light);
+}
+
+.menu-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-item {
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.menu-item:hover, .menu-item.active {
+  background: var(--crimson-accent);
+  color: var(--pure-white);
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.menu-brand-icon {
+  width: 14px;
+  height: 14px;
+  background: var(--crimson-accent);
+  border: 1px solid var(--border-dark);
+  display: inline-block;
+}
+
+.menu-clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+/* Main Application Window Container */
+.desktop-viewport {
+  flex: 1;
+  padding: 12px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.retro-main-window {
+  width: 100%;
+  max-width: 1320px;
+  height: calc(100vh - 54px);
+  background: var(--base-light);
+  border: 2px solid var(--border-dark);
+  box-shadow: 4px 4px 0 var(--deep-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Classic Pinstripe Title Bar */
+.system-title-bar {
+  height: 26px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--base-light),
+    var(--base-light) 2px,
+    var(--border-dark) 2px,
+    var(--border-dark) 3px
+  );
+  border-bottom: 2px solid var(--border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  position: relative;
+  user-select: none;
+}
+
+.window-box-btn {
+  width: 14px;
+  height: 14px;
+  background: var(--base-light);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 var(--bevel-light), inset -1px -1px 0 var(--bevel-dark);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.window-box-btn:active {
+  box-shadow: inset 1px 1px 0 var(--deep-shadow);
+  background: var(--vibrant-red);
+}
+
+.window-title-badge {
+  background: var(--base-light);
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  border-left: 2px solid var(--base-light);
+  border-right: 2px solid var(--base-light);
+  color: var(--base-dark);
+}
+
+/* System Action / Toolbar */
+.system-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--base-light);
+  border-bottom: 2px solid var(--border-dark);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Retro Segmented Buttons */
+.segmented-control {
+  display: inline-flex;
+  border: 2px solid var(--border-dark);
+  background: var(--base-light);
+  box-shadow: 1px 1px 0 var(--deep-shadow);
+}
+
+.segmented-btn {
+  border: none;
+  border-right: 1px solid var(--border-dark);
+  background: var(--base-light);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--base-dark);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.segmented-btn:last-child {
+  border-right: none;
+}
+
+.segmented-btn:hover {
+  background: var(--highlight-bg);
+}
+
+.segmented-btn.active {
+  background: var(--crimson-accent);
+  color: var(--pure-white);
+  box-shadow: inset 1px 1px 2px var(--deep-shadow);
+}
+
+/* Standard Retro System Buttons */
+.system-btn {
+  background: var(--base-light);
+  border: 2px solid var(--border-dark);
+  color: var(--base-dark);
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.system-btn:hover {
+  background: var(--highlight-bg);
+}
+
+.system-btn:active {
+  box-shadow: inset 1px 1px 1px var(--deep-shadow);
+  transform: translate(1px, 1px);
+}
+
+.system-btn.primary {
+  border-width: 3px;
+  background: var(--highlight-bg);
+  color: var(--base-dark);
+}
+
+.system-btn.danger {
+  color: var(--vibrant-red);
+}
+
+/* System Input Fields */
+.system-input {
+  background: var(--pure-white);
+  border: 2px solid var(--border-dark);
+  color: var(--base-dark);
+  padding: 4px 8px;
+  font-size: 12px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.system-input:focus {
+  border-color: var(--crimson-accent);
+}
+
+/* System Status Strip */
+.system-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background: var(--highlight-bg);
+  border-bottom: 2px solid var(--border-dark);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  background: var(--base-light);
+  border: 1px solid var(--border-dark);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #28a745;
+  border: 1px solid var(--border-dark);
+  display: inline-block;
+}
+
+.status-dot.busy {
+  background: var(--vibrant-red);
+}
+
+/* Main Content Area */
+.window-body-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--base-light);
+}
+
+/* Retro System Tabs */
+.system-tabs-bar {
+  display: flex;
+  padding: 6px 12px 0 12px;
+  gap: 4px;
+  border-bottom: 2px solid var(--border-dark);
+  background: var(--base-light);
+}
+
+.system-tab {
+  padding: 6px 16px;
+  background: #c8c8c8;
+  border: 2px solid var(--border-dark);
+  border-bottom: none;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--base-dark);
+  position: relative;
+  top: 2px;
+}
+
+.system-tab:hover {
+  background: var(--highlight-bg);
+}
+
+.system-tab.active {
+  background: var(--base-light);
+  border-bottom: 2px solid var(--base-light);
+  top: 2px;
+  z-index: 2;
+  color: var(--crimson-accent);
+}
+
+/* Tab Panels */
+.tab-content-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.tab-pane {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tab-pane.active {
+  display: flex;
+}
+
+/* Dropzone Inset Box */
+.retro-dropzone {
+  border: 2px dashed var(--border-dark);
+  background: var(--highlight-bg);
+  padding: 34px 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 10px;
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.retro-dropzone:hover, .retro-dropzone.dragover {
+  border-color: var(--crimson-accent);
+  background: #eed5dc;
+}
+
+.dropzone-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: var(--crimson-accent);
+}
+
+.dropzone-subtitle {
+  font-size: 13px;
+  color: #4a3b40;
+}
+
+/* Retro Striped Progress Bar */
+.retro-progress-wrapper {
+  margin-top: 10px;
+  display: none;
+}
+
+.retro-progress-wrapper.visible {
+  display: block;
+}
+
+.retro-progress-track {
+  height: 20px;
+  background: var(--pure-white);
+  border: 2px solid var(--border-dark);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.retro-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--crimson-accent),
+    var(--crimson-accent) 10px,
+    var(--vibrant-red) 10px,
+    var(--vibrant-red) 20px
+  );
+  transition: width 0.2s ease;
+}
+
+.retro-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+/* Retro Tabular Viewport */
+.table-scroll-viewport {
+  flex: 1;
+  overflow: auto;
+  border: 2px solid var(--border-dark);
+  background: var(--pure-white);
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.retro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.retro-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--base-light);
+  border-bottom: 2px solid var(--border-dark);
+  border-right: 1px solid var(--border-dark);
+  padding: 6px 10px;
+  font-weight: bold;
+  color: var(--base-dark);
+  user-select: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.retro-table thead th:hover {
+  background: var(--highlight-bg);
+}
+
+.retro-table thead th.sort-active {
+  background: var(--crimson-accent);
+  color: var(--pure-white);
+}
+
+.retro-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+}
+
+.retro-table tbody tr:hover {
+  background: var(--highlight-bg);
+}
+
+.retro-table tbody tr.selected {
+  background: #e6c5ce;
+  font-weight: bold;
+}
+
+.retro-table td {
+  padding: 6px 10px;
+  border-right: 1px solid #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* Classification Badges */
+.badge-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border-dark);
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.badge-people {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-organizations {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.badge-newsletters {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-mixed {
+  background: var(--highlight-bg);
+  color: var(--crimson-accent);
+  border-color: var(--crimson-accent);
+}
+
+/* Bottom Window Footer Bar */
+.window-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--base-light);
+  border-top: 2px solid var(--border-dark);
+  font-size: 12px;
+  font-weight: bold;
+  gap: 12px;
+}
+
+/* Retro System Modal Dialogs */
+.system-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 10, 15, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.system-modal-backdrop.open {
+  display: flex;
+}
+
+.system-modal-window {
+  width: 100%;
+  max-width: 780px;
+  max-height: 90vh;
+  background: var(--base-light);
+  border: 3px solid var(--border-dark);
+  box-shadow: 6px 6px 0 var(--deep-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content-scroll {
+  padding: 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Retro System Alert Dialog */
+.system-alert-window {
+  width: 100%;
+  max-width: 480px;
+  background: var(--base-light);
+  border: 3px solid var(--border-dark);
+  box-shadow: 6px 6px 0 var(--deep-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-body {
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.alert-icon-box {
+  width: 42px;
+  height: 42px;
+  background: var(--vibrant-red);
+  color: var(--pure-white);
+  border: 2px solid var(--border-dark);
+  box-shadow: 2px 2px 0 var(--deep-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.alert-text-block {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.alert-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #c8c8c8;
+  border-top: 2px solid var(--border-dark);
+}
+
+/* Verification Brief Box */
+.brief-panel {
+  background: var(--pure-white);
+  border: 2px solid var(--border-dark);
+  padding: 12px;
+  margin-top: 12px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.brief-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-dark);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.brief-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--crimson-accent);
+}
+
+.risk-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.risk-pill {
+  padding: 2px 6px;
+  border: 1px solid var(--border-dark);
+  font-size: 11px;
+}
+
+.risk-low {
+  background: #d4edda;
+  color: #155724;
+}
+
+.risk-med {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.risk-high {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Monospace Preview Box */
+.mono-preview {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  background: #fbfbfb;
+  border: 1px solid var(--border-dark);
+  padding: 8px;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive constraints */
+@media (max-width: 768px) {
+  .retro-main-window {
+    height: 100vh;
+  }
+  .system-desktop {
+    padding: 0;
+  }
+  .desktop-viewport {
+    padding: 0;
+  }
+}

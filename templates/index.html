@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanMail - Email Cleaner</title>
+  <link rel="stylesheet" href="/static/system.css">
+  <link rel="stylesheet" href="/static/retro_theme.css">
+</head>
+<body>
+  <div class="system-desktop">
+    <!-- Top System 7 Menu Bar -->
+    <header class="retro-menu-bar">
+      <div class="menu-group">
+        <div class="menu-brand">
+          <span class="menu-brand-icon"></span>
+          <span>CleanMail</span>
+        </div>
+        <div class="menu-item" onclick="app.showUploadView()">Upload File</div>
+        <div class="menu-item" onclick="app.showMainView()">Senders</div>
+        <div class="menu-item" onclick="app.openFilterModal()">Create Filter</div>
+        <div class="menu-item" onclick="app.resetDatabase()">Reset All</div>
+      </div>
+    </header>
+
+    <!-- Main Desktop Viewport -->
+    <main class="desktop-viewport">
+      <div class="retro-main-window">
+        <!-- Pinstripe Title Bar -->
+        <div class="system-title-bar">
+          <button class="window-box-btn" aria-label="Close Window" onclick="app.resetView()"></button>
+          <div class="window-title-badge" id="windowTitleBadge">CleanMail - Email Cleaner</div>
+          <button class="window-box-btn" aria-label="Zoom Window" onclick="app.toggleFullscreen()"></button>
+        </div>
+
+        <!-- VIEW 1: Upload Screen (Shown when no emails or user clicks Upload) -->
+        <div id="uploadView" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 24px;">
+          <div style="background: var(--base-light); border: 3px solid var(--border-dark); box-shadow: 4px 4px 0 var(--deep-shadow); max-width: 580px; width: 100%; padding: 24px; text-align: center;">
+            <div style="font-size: 20px; font-weight: bold; color: var(--crimson-accent); margin-bottom: 8px;">Clean up your Gmail</div>
+            <div style="font-size: 13px; line-height: 1.5; margin-bottom: 20px; color: var(--base-dark);">
+              Upload your Gmail backup file (.mbox) to see who emails you the most, find unwanted newsletters, and create rules to stop junk mail.
+            </div>
+
+            <!-- Upload Dropzone -->
+            <div class="retro-dropzone" id="fileDropzone" onclick="document.getElementById('fileUploadInput').click()">
+              <input type="file" id="fileUploadInput" accept=".mbox,application/mbox" style="display: none;" onchange="app.handleFileSelect(this.files)">
+              <div class="dropzone-title">Drop your .mbox file here</div>
+              <div class="dropzone-subtitle">or click anywhere inside this box to select from your computer</div>
+            </div>
+
+            <div style="display: flex; justify-content: center; margin-top: 10px;">
+              <button class="system-btn" id="cancelUploadBtn" onclick="app.showMainView()" style="display: none;">Back to Senders</button>
+            </div>
+
+            <!-- Real-time Progress Bar -->
+            <div class="retro-progress-wrapper" id="indexingProgressBar" style="margin-top: 18px; text-align: left;">
+              <div class="retro-progress-track">
+                <div class="retro-progress-fill" id="progressFillBar"></div>
+              </div>
+              <div class="retro-progress-label" style="margin-top: 6px;">
+                <span id="progressMessageLabel">Waiting for file...</span>
+                <span id="progressPercentageLabel">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: Main Senders View (Shown when emails are loaded) -->
+        <div id="mainView" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+          <!-- System Toolbar -->
+          <div class="system-toolbar">
+            <div class="segmented-control" id="classificationFilterGroup">
+              <button class="segmented-btn active" data-filter="all" onclick="app.setFilter('all')">All Senders</button>
+              <button class="segmented-btn" data-filter="newsletters" onclick="app.setFilter('newsletters')">Newsletters and Ads</button>
+              <button class="segmented-btn" data-filter="organizations" onclick="app.setFilter('organizations')">Companies</button>
+              <button class="segmented-btn" data-filter="people" onclick="app.setFilter('people')">Personal</button>
+              <button class="segmented-btn" data-filter="mixed" onclick="app.setFilter('mixed')">Receipts and Ads</button>
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="searchInput" class="system-input" placeholder="Search sender or company..." style="width: 200px;" oninput="app.handleSearch(this.value)">
+              <button class="system-btn primary" onclick="app.openFilterModal()">Create Gmail Filter</button>
+              <button class="system-btn" onclick="app.showUploadView()">Upload File</button>
+            </div>
+          </div>
+
+          <!-- Summary Strip -->
+          <div class="system-status-strip">
+            <span>Total emails: <strong id="statTotalMessages">0</strong></span>
+            <span>Senders: <strong id="statTotalSenders">0</strong></span>
+            <span>Newsletters and ads: <strong id="statJunkCandidates">0</strong></span>
+            <span>Companies: <strong id="statTotalDomains">0</strong></span>
+          </div>
+
+          <!-- Senders Table -->
+          <div class="window-body-viewport">
+            <div class="table-scroll-viewport">
+              <table class="retro-table" id="sendersTable">
+                <thead>
+                  <tr>
+                    <th style="width: 38px; text-align: center;">
+                      <input type="checkbox" id="selectAllSendersCheckbox" onchange="app.toggleSelectAll(this.checked)">
+                    </th>
+                    <th onclick="app.sortBy('name')">Sender Name</th>
+                    <th onclick="app.sortBy('email')">Email Address</th>
+                    <th onclick="app.sortBy('classification')">Type</th>
+                    <th onclick="app.sortBy('volume')" class="sort-active" id="colSortVolume">Emails Sent ▼</th>
+                    <th onclick="app.sortBy('last_seen')">Last Email</th>
+                    <th style="text-align: center;">AI Review</th>
+                  </tr>
+                </thead>
+                <tbody id="sendersTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 24px; color: #666;">
+                      No emails loaded yet. Click Upload File above to start.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="window-footer-bar">
+              <div id="paginationSummary">Showing 0 of 0 senders</div>
+              <div class="pagination-controls">
+                <button class="system-btn" id="prevPageBtn" onclick="app.prevPage()" disabled>Previous</button>
+                <span id="currentPageIndicator">Page 1</span>
+                <button class="system-btn" id="nextPageBtn" onclick="app.nextPage()">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Sender Detail & AI Review Modal -->
+  <div class="system-modal-backdrop" id="senderDetailModal">
+    <div class="system-modal-window">
+      <div class="system-title-bar">
+        <button class="window-box-btn" aria-label="Close Modal" onclick="app.closeSenderModal()"></button>
+        <div class="window-title-badge" id="modalSenderTitle">Sender Details</div>
+        <button class="window-box-btn" aria-label="Resize Modal" onclick="app.closeSenderModal()"></button>
+      </div>
+
+      <div class="modal-content-scroll">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; background: var(--base-light); padding: 8px; border: 1px solid var(--border-dark);">
+          <div>
+            <div style="font-size: 16px; font-weight: bold; color: var(--crimson-accent);" id="modalSenderName">Sender Name</div>
+            <div style="font-size: 12px; color: var(--base-dark);" id="modalSenderEmail">sender@example.com</div>
+          </div>
+          <div style="text-align: right; font-size: 12px;">
+            <div>Total emails: <strong id="modalMessageCount">0</strong></div>
+            <div>Latest: <span id="modalLastSeen">-</span></div>
+          </div>
+        </div>
+
+        <!-- AI Advice Box -->
+        <div class="brief-panel">
+          <div class="brief-header">
+            <span class="brief-title">AI Advice</span>
+            <button class="system-btn primary" id="triggerMcpBtn" onclick="app.runMcpVerification()">Ask AI to Check This Sender</button>
+          </div>
+
+          <div id="mcpLoadingIndicator" style="display: none; padding: 12px; text-align: center; font-weight: bold;">
+            Checking emails with AI...
+          </div>
+
+          <div id="mcpBriefResult" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: bold; color: #666;" id="mcpEngineLabel">Engine: AI Review</span>
+              <div class="risk-meter">
+                <span>Safe to remove?</span>
+                <span class="risk-pill" id="mcpRiskScore">Checking...</span>
+              </div>
+            </div>
+
+            <div style="font-size: 12px; line-height: 1.4; margin-bottom: 8px;" id="mcpSummaryText">
+              Summary text will appear here.
+            </div>
+
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Key details:</div>
+            <ul id="mcpFindingsList" style="font-size: 11px; margin: 0 0 10px 18px; padding: 0;"></ul>
+
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">Recommended Gmail search rule:</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="mcpSafeQueryInput" class="system-input" style="flex: 1; font-family: monospace;" readonly>
+              <button class="system-btn" onclick="app.copySafeQuery()">Copy Rule</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Email Subjects -->
+        <div style="margin-top: 14px;">
+          <div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">Recent Emails</div>
+          <div class="table-scroll-viewport" style="max-height: 180px;">
+            <table class="retro-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Subject</th>
+                  <th>Kind</th>
+                </tr>
+              </thead>
+              <tbody id="modalSubjectsTableBody">
+                <tr><td colspan="3" style="text-align: center;">No emails loaded</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-actions">
+        <button class="system-btn" onclick="app.updateSenderTriage('keep')">Keep in Inbox</button>
+        <button class="system-btn danger" onclick="app.updateSenderTriage('junk')">Mark as Junk</button>
+        <button class="system-btn primary" onclick="app.closeSenderModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Gmail Filter Modal -->
+  <div class="system-modal-backdrop" id="filterModal">
+    <div class="system-modal-window" style="max-width: 620px;">
+      <div class="system-title-bar">
+        <button class="window-box-btn" aria-label="Close Filter Window" onclick="app.closeFilterModal()"></button>
+        <div class="window-title-badge">Create Gmail Filter</div>
+        <button class="window-box-btn" aria-label="Resize Filter Window" onclick="app.closeFilterModal()"></button>
+      </div>
+      <div class="modal-content-scroll">
+        <div style="font-size: 13px; line-height: 1.5; margin-bottom: 12px;">
+          Choose selected senders to filter out in Gmail. You can copy the search query to test it in Gmail, or download the filter file to import directly.
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button class="system-btn primary" onclick="app.selectJunkCandidates()">Select All Newsletters and Ads</button>
+          <button class="system-btn" onclick="app.clearSelection()">Deselect All</button>
+        </div>
+
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Gmail Search Query:</div>
+        <textarea id="gmailQueryOutput" class="mono-preview" style="width: 100%; height: 60px; resize: none; margin-bottom: 8px;" readonly placeholder="Select senders to generate query"></textarea>
+        <div style="margin-bottom: 16px;">
+          <button class="system-btn" onclick="app.copyToClipboard('gmailQueryOutput')">Copy Query</button>
+        </div>
+
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">Download Filter File for Gmail:</div>
+        <div style="font-size: 12px; margin-bottom: 8px; color: #444;">
+          Import this file in Gmail under Settings > Filters and Blocked Addresses > Import filters.
+        </div>
+        <button class="system-btn primary" onclick="app.downloadXmlFile()">Download mailFilters.xml</button>
+      </div>
+      <div class="alert-actions">
+        <button class="system-btn primary" onclick="app.closeFilterModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standard Retro Alert Dialog -->
+  <div class="system-modal-backdrop" id="systemAlertDialog">
+    <div class="system-alert-window">
+      <div class="system-title-bar">
+        <button class="window-box-btn" aria-label="Close Alert" onclick="app.closeAlert()"></button>
+        <div class="window-title-badge" id="alertTitle">Notice</div>
+        <button class="window-box-btn" aria-label="Resize Alert" onclick="app.closeAlert()"></button>
+      </div>
+      <div class="alert-body">
+        <div class="alert-icon-box">!</div>
+        <div class="alert-text-block" id="alertMessage">
+          Alert message text
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="system-btn primary" onclick="app.closeAlert()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

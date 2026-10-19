@@ -1,0 +1,2 @@
+- gmail filters
+- the ai stuff
