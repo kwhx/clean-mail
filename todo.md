@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 - [x] Gmail filters (one-click copy search query and downloadable mailFilters.xml)
 - [x] Bullet point styling removal from tags
 - [x] Local AI model architecture (Hugging Face Transformers runner with Qwen 2.5 0.5B)
@@ -10,6 +11,10 @@
 mvp done!!
 
 
-1. [BRANCH AINTEG] gmail filters, ai stuff - getting the functionality work as desired
-2. [BRANCH AINTEG] ui overhaul pending for clean tab - cleanup and professionalism
-3. [BRANCH REFACTOR] refactor job: for the kind of tool this is, a web interface running locally doesnt feel right, the suitab;le architectire for sucha  tool which has to retain data session wise (summaries, counts, etc) adn provide such features is better suited with a cpp executable isnt it?? what we have sitting in this repo as ofnow, can that be totally refactored to a standalone cpp executable and that too in such a manner that when you launch the executable you find no difference from this interfeace we currently havve and all functionality is available as well?? 
+lets do this once the full refactor and port work is done:
+1. [BRANCH AISTUFF] gmail filters, ai stuff - getting the functionality work as desired
+2. [BRANCH AISTUFF] ui overhaul pending for clean tab - cleanup and professionalism
+
+For ai models: dont touch/modify thsi file.
+
+need to delete that refactor branch, need to work on the above 2 points, not porting anymore - plan dropped

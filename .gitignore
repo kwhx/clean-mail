@@ -31,3 +31,6 @@ scratch/
 *.swp
 *.swo
 *~
+target/
+build/
+dist/

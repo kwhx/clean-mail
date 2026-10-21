@@ -1,0 +1,76 @@
+name: Build Standalone Desktop Executables
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: CleanMail-Windows.exe
+            dist_path: dist/CleanMail.exe
+            package_cmd: echo "Windows build complete"
+
+          - os: macos-latest
+            artifact_name: CleanMail-macOS.zip
+            dist_path: dist/CleanMail-macOS.zip
+            package_cmd: cd dist && zip -r CleanMail-macOS.zip CleanMail.app
+
+          - os: ubuntu-22.04
+            artifact_name: CleanMail-Linux-x86_64
+            dist_path: dist/CleanMail
+            package_cmd: chmod +x dist/CleanMail
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-desktop.txt
+
+      - name: Build Standalone Executable with PyInstaller
+        run: |
+          pyinstaller --clean -y cleanmail.spec
+
+      - name: Post-process package
+        run: |
+          ${{ matrix.package_cmd }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.dist_path }}
+
+      - name: Create GitHub Release and Upload Assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.dist_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
