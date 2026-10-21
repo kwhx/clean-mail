@@ -151,11 +151,14 @@ async def upload_mbox_endpoint(
 
     file_size_bytes = os.path.getsize(target_path)
 
+    # Initial realistic estimation until mailbox is opened (~125KB per email average)
+    initial_est_msgs = max(1, int(file_size_bytes / 125000))
+
     set_indexing_status(
         status="parsing",
         current_file=safe_filename,
         messages_processed=0,
-        total_estimated=max(10, int(file_size_bytes / 2500)),
+        total_estimated=initial_est_msgs,
         senders_found=0,
         elapsed_seconds=0.0
     )

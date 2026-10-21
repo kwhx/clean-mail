@@ -36,6 +36,11 @@ hiddenimports = [
     'app.classifier',
     'app.mcp_bridge',
     'webview',
+    'webview.platforms.gtk',
+    'webview.platforms.winforms',
+    'webview.platforms.edgechromium',
+    'webview.platforms.cocoa',
+    'gi',
 ]
 
 a = Analysis(
@@ -55,6 +60,12 @@ a = Analysis(
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+icon_file = None
+if sys.platform.startswith('win') and os.path.exists('packaging/windows/cleanmail.ico'):
+    icon_file = 'packaging/windows/cleanmail.ico'
+elif sys.platform == 'darwin' and os.path.exists('packaging/mac/cleanmail.icns'):
+    icon_file = 'packaging/mac/cleanmail.icns'
 
 exe = EXE(
     pyz,
@@ -76,12 +87,14 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon_file,
 )
 
 if sys.platform == 'darwin':
     app = BUNDLE(
         exe,
         name='CleanMail.app',
-        icon=None,
+        icon='packaging/mac/cleanmail.icns' if os.path.exists('packaging/mac/cleanmail.icns') else None,
         bundle_identifier='com.khwahish.cleanmail',
     )
+

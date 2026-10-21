@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CleanMail
+GenericName=Email Client
+Comment=Fast, retro 90s-styled local desktop email client
+Exec=cleanmail %u
+Icon=cleanmail
+Terminal=false
+Categories=Network;Email;Utility;
+StartupNotify=true
+StartupWMClass=CleanMail
+Keywords=email;mail;cleanmail;retro;inbox;

@@ -105,7 +105,7 @@ body {
 
 .retro-main-window {
   width: 100%;
-  max-width: 1320px;
+  max-width: none;
   min-width: 0;
   flex: 1 1 auto;
   height: calc(100vh - 54px);

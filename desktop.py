@@ -88,6 +88,7 @@ def main():
         height=850,
         min_size=(1024, 680),
         text_select=True,
+        zoomable=True,
         confirm_close=False,
     )
 

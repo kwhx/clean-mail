@@ -10,11 +10,9 @@
 
 mvp done!!
 
-
-lets do this once the full refactor and port work is done:
 1. [BRANCH AISTUFF] gmail filters, ai stuff - getting the functionality work as desired
 2. [BRANCH AISTUFF] ui overhaul pending for clean tab - cleanup and professionalism
 
 For ai models: dont touch/modify thsi file.
 
-need to delete that refactor branch, need to work on the above 2 points, not porting anymore - plan dropped
+need to check teh executable [teh webview one], need to verify gh workflow if its working well, project readme shall have project image as well as the workflow badge

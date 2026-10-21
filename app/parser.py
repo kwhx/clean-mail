@@ -61,7 +61,8 @@ def parse_mbox_stream(file_path: str, batch_size: int = 150) -> Dict[str, Any]:
     start_time = time.time()
     filename = os.path.basename(file_path)
     file_size_bytes = os.path.getsize(file_path)
-    est_total_msgs = max(10, int(file_size_bytes / 2500))
+    # Modern emails with HTML/attachments average ~125KB in mbox archives
+    est_total_msgs = max(1, int(file_size_bytes / 125000))
 
     set_indexing_status(
         status="parsing",
@@ -73,6 +74,20 @@ def parse_mbox_stream(file_path: str, batch_size: int = 150) -> Dict[str, Any]:
     )
 
     box = mailbox.mbox(file_path, create=False)
+    try:
+        total_messages = len(box)
+    except Exception:
+        total_messages = est_total_msgs
+
+    if total_messages > 0:
+        set_indexing_status(
+            status="parsing",
+            current_file=filename,
+            messages_processed=0,
+            total_estimated=total_messages,
+            senders_found=0,
+            elapsed_seconds=round(time.time() - start_time, 1)
+        )
 
     messages_batch: List[Dict[str, Any]] = []
     senders_meta: Dict[str, Dict[str, Any]] = {}
@@ -218,7 +233,7 @@ def parse_mbox_stream(file_path: str, batch_size: int = 150) -> Dict[str, Any]:
                     status="parsing",
                     current_file=filename,
                     messages_processed=total_processed,
-                    total_estimated=max(total_processed + 10, est_total_msgs),
+                    total_estimated=max(total_processed, total_messages),
                     senders_found=len(sender_history),
                     elapsed_seconds=round(now - start_time, 1)
                 )
@@ -252,7 +267,7 @@ def parse_mbox_stream(file_path: str, batch_size: int = 150) -> Dict[str, Any]:
             status="error",
             current_file=filename,
             messages_processed=total_processed,
-            total_estimated=est_total_msgs,
+            total_estimated=max(total_processed, total_messages if 'total_messages' in locals() else est_total_msgs),
             senders_found=len(sender_history),
             elapsed_seconds=round(time.time() - start_time, 2),
             error_message=str(exc)

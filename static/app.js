@@ -763,13 +763,28 @@ const app = {
           if (status.status === 'parsing' || status.status === 'indexing') {
             if (pBar) pBar.classList.add('visible');
 
-            const pct = status.total_messages_estimated > 0
-              ? Math.min(99, Math.round((status.messages_processed / status.total_messages_estimated) * 100))
-              : 50;
+            let pct = 0;
+            if (status.total_messages_estimated > 0) {
+              pct = Math.min(99, Math.max(0, Math.round((status.messages_processed / status.total_messages_estimated) * 100)));
+            } else if (status.messages_processed > 0) {
+              pct = Math.min(95, Math.round(Math.log10(status.messages_processed + 1) * 20));
+            }
 
             if (pFill) pFill.style.width = `${pct}%`;
             if (pPct) pPct.textContent = `${pct}%`;
-            if (pMsg) pMsg.textContent = `Reading emails: ${status.messages_processed.toLocaleString()} processed so far...`;
+            if (pMsg) {
+              if (status.total_messages_estimated > 0) {
+                if (status.messages_processed === 0) {
+                  pMsg.textContent = `Reading emails: scanning mailbox (${status.total_messages_estimated.toLocaleString()} emails found)...`;
+                } else {
+                  pMsg.textContent = `Reading emails: ${status.messages_processed.toLocaleString()} of ${status.total_messages_estimated.toLocaleString()} processed...`;
+                }
+              } else {
+                pMsg.textContent = status.messages_processed > 0
+                  ? `Reading emails: ${status.messages_processed.toLocaleString()} processed so far...`
+                  : 'Reading emails: scanning mailbox structure...';
+              }
+            }
 
             setTimeout(poll, 700);
             return;
